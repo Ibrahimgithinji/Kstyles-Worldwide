@@ -1,0 +1,14 @@
+node_modules
+.env
+.next
+dev.db
+dist
+*.log
+/prisma/dev.db
+/src/generated/prisma
+public/images
+skills-lock.json
+.agents
+.claude
+.windsurf
+.kilo

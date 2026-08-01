@@ -1,10 +1,14 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ProductCard from "@/components/ProductCard";
-import { products } from "@/lib/data";
 const cats = ["All", "Outerwear", "Tops", "Bottoms"];
 export default function ShopPage() {
+  const [products, setProducts] = useState<any[]>([]);
   const [active, setActive] = useState("All");
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    fetch("/api/products").then(r => r.json()).then(d => { setProducts(d.products || []); setLoading(false); });
+  }, []);
   const filtered = active === "All" ? products : products.filter(p => p.category === active.toLowerCase());
   return (
     <div className="pt-24 pb-16">
@@ -13,13 +17,11 @@ export default function ShopPage() {
         <p className="mt-2 text-[#a0a0a0]">{filtered.length} product{filtered.length !== 1 ? "s" : ""}</p>
         <div className="mt-8 flex gap-2">
           {cats.map(c => (
-            <button key={c} onClick={() => setActive(c)} className={`rounded-md px-4 py-2 text-sm uppercase tracking-widest transition-colors ${
-              active === c ? "bg-[#d4af37] text-black" : "border border-[#2a2a2a] text-[#a0a0a0] hover:text-white"
-            }`}>{c}</button>
+            <button key={c} onClick={() => setActive(c)} className={`rounded-md px-4 py-2 text-sm uppercase tracking-widest transition-colors ${active === c ? "bg-[#d4af37] text-black" : "border border-[#2a2a2a] text-[#a0a0a0] hover:text-white"}`}>{c}</button>
           ))}
         </div>
         <div className="mt-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          {filtered.map(p => <ProductCard key={p.id} product={p} />)}
+          {loading ? <p className="text-[#a0a0a0]">Loading...</p> : filtered.map(p => <ProductCard key={p.id} product={p} />)}
         </div>
       </div>
     </div>

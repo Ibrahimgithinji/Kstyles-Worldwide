@@ -1,10 +1,13 @@
-"use client";
-import { useParams } from "next/navigation";
 import Link from "next/link";
-import { blogPosts } from "@/lib/data";
-export default function BlogPostPage() {
-  const { slug } = useParams();
-  const post = blogPosts.find(p => p.slug === slug);
+export const dynamic = "force-dynamic";
+export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  let post: { title: string; content: string; date: string; author: string; tags: string[] } | null = null;
+  try {
+    const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+    const res = await fetch(base + "/api/blog/" + slug, { cache: "no-store" });
+    if (res.ok) post = await res.json();
+  } catch {}
   if (!post) return (
     <div className="pt-24 text-center">
       <p className="text-[#a0a0a0]">Post not found.</p>

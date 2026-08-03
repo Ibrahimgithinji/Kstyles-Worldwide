@@ -51,6 +51,38 @@ db.exec(`
     color TEXT NOT NULL,
     price REAL NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS collections (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL,
+    image TEXT DEFAULT '',
+    slug TEXT UNIQUE NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS blog_posts (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    slug TEXT UNIQUE NOT NULL,
+    excerpt TEXT NOT NULL,
+    content TEXT NOT NULL,
+    image TEXT DEFAULT '',
+    author TEXT NOT NULL,
+    date TEXT NOT NULL,
+    tags TEXT DEFAULT ''
+  );
+  CREATE TABLE IF NOT EXISTS contacts (
+    id TEXT PRIMARY KEY,
+    firstName TEXT NOT NULL,
+    lastName TEXT NOT NULL,
+    email TEXT NOT NULL,
+    message TEXT NOT NULL,
+    createdAt TEXT DEFAULT (datetime('now'))
+  );
+  CREATE TABLE IF NOT EXISTS subscribers (
+    id TEXT PRIMARY KEY,
+    email TEXT UNIQUE NOT NULL,
+    createdAt TEXT DEFAULT (datetime('now'))
+  );
 `);
 
 export default db;

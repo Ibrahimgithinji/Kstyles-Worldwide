@@ -14,8 +14,12 @@ export default function Header() {
   useEffect(() => {
     const update = () => setCount(getCart().reduce((s, i) => s + i.quantity, 0));
     update();
+    window.addEventListener("cart-updated", update);
     window.addEventListener("storage", update);
-    return () => window.removeEventListener("storage", update);
+    return () => {
+      window.removeEventListener("cart-updated", update);
+      window.removeEventListener("storage", update);
+    };
   }, []);
   return (
     <header className="fixed top-0 z-50 w-full border-b border-[#2a2a2a] bg-black/80 backdrop-blur-md">

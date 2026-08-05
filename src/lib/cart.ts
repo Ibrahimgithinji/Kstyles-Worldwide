@@ -15,6 +15,7 @@ export function getCart(): CartItem[] {
 }
 export function saveCart(items: CartItem[]) {
   localStorage.setItem("kstyles_cart", JSON.stringify(items));
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("cart-updated"));
 }
 export function addToCart(item: CartItem) {
   const cart = getCart();

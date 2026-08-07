@@ -1,13 +1,16 @@
 "use client";
 import { useEffect, useState } from "react";
 import { getAuthHeaders } from "@/lib/auth-client";
+import Link from "next/link";
 import { formatPrice } from "@/lib/utils";
 export default function AdminOrders() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [denied, setDenied] = useState(false);
   async function load() {
     const res = await fetch("/api/admin/orders", { headers: getAuthHeaders() });
     if (res.ok) { const d = await res.json(); setOrders(d.orders); }
+    else setDenied(true);
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
@@ -15,6 +18,13 @@ export default function AdminOrders() {
     await fetch("/api/admin/orders", { method: "PUT", headers: { "Content-Type": "application/json", ...getAuthHeaders() }, body: JSON.stringify({ orderId, status }) });
     load();
   }
+  if (denied) return (
+    <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
+      <h1 className="text-2xl font-bold text-white">Admin access required</h1>
+      <p className="mt-2 text-[#a0a0a0]">Please sign in with an admin account to manage orders.</p>
+      <Link href="/auth/login" className="mt-6 rounded-md bg-[#d4af37] px-6 py-3 text-sm font-semibold uppercase tracking-widest text-black hover:bg-[#b8960f] transition-colors">Sign In</Link>
+    </div>
+  );
   return (
     <div>
       <h1 className="text-2xl font-bold text-white">Orders</h1>

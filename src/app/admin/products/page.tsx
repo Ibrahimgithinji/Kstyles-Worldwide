@@ -38,6 +38,24 @@ export default function AdminProductsPage() {
     await fetch("/api/admin/products/" + id, { method: "DELETE", headers: getAuthHeaders() });
     load();
   }
+  const [uploading, setUploading] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  async function handleUpload(file: File | null) {
+    if (!file) return;
+    setUploading(true);
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch("/api/upload", { method: "POST", headers: getAuthHeaders(), body: fd });
+    const data = await res.json();
+    if (res.ok) setForm(f => ({ ...f, image: data.url }));
+    else setMsg("Upload failed: " + (data.error || "unknown error"));
+    setUploading(false);
+  }
+  function onDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragging(false);
+    handleUpload(e.dataTransfer.files?.[0] ?? null);
+  }
   return (
     <div>
       <div className="flex items-center justify-between">
@@ -53,7 +71,29 @@ export default function AdminProductsPage() {
           </div>
           <div><label className="block text-sm font-semibold text-white">Description</label><textarea required rows={2} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="mt-1 w-full rounded-md border border-[#2a2a2a] bg-black px-4 py-2 text-sm text-white focus:border-[#d4af37] focus:outline-none" /></div>
           <div className="grid gap-4 sm:grid-cols-3">
-            <div><label className="block text-sm font-semibold text-white">Image URL</label><input value={form.image} onChange={e => setForm({ ...form, image: e.target.value })} placeholder="https://..." className="mt-1 w-full rounded-md border border-[#2a2a2a] bg-black px-4 py-2 text-sm text-white focus:border-[#d4af37] focus:outline-none" /></div>
+            <div><label className="block text-sm font-semibold text-white">Image</label>
+              <div
+                onDragOver={e => { e.preventDefault(); setDragging(true); }}
+                onDragLeave={() => setDragging(false)}
+                onDrop={onDrop}
+                onClick={() => document.getElementById("file-image-input")?.click()}
+                className={`mt-1 flex min-h-[120px] cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed px-4 py-4 text-center transition-colors ${dragging ? "border-[#d4af37] bg-[#d4af37]/10" : "border-[#2a2a2a] bg-black hover:border-[#555]"}`}
+              >
+                {form.image ? (
+                  <img src={form.image} alt="" className="max-h-28 rounded object-contain" />
+                ) : uploading ? (
+                  <p className="text-sm text-[#a0a0a0]">Uploading...</p>
+                ) : (
+                  <>
+                    <span className="text-2xl text-[#d4af37]">+</span>
+                    <p className="text-xs text-[#a0a0a0]">Drag &amp; drop image or click to browse</p>
+                    <p className="text-[10px] text-[#555]">PNG, JPG, WebP — up to 5MB</p>
+                  </>
+                )}
+              </div>
+              <input id="file-image-input" type="file" accept="image/*" className="hidden" onChange={e => handleUpload(e.target.files?.[0] ?? null)} />
+              <input id="file-image-url" type="text" value={form.image} onChange={e => setForm({ ...form, image: e.target.value })} placeholder=".or paste image URL" className="mt-2 w-full rounded-md border border-[#2a2a2a] bg-black px-4 py-2 text-xs text-white focus:border-[#d4af37] focus:outline-none" />
+            </div>
             <div><label className="block text-sm font-semibold text-white">Category</label><select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} className="mt-1 w-full rounded-md border border-[#2a2a2a] bg-black px-4 py-2 text-sm text-white focus:border-[#d4af37] focus:outline-none"><option>tops</option><option>bottoms</option><option>outerwear</option><option>accessories</option></select></div>
             <div><label className="block text-sm font-semibold text-white">Sizes (comma)</label><input value={form.sizes} onChange={e => setForm({ ...form, sizes: e.target.value })} className="mt-1 w-full rounded-md border border-[#2a2a2a] bg-black px-4 py-2 text-sm text-white focus:border-[#d4af37] focus:outline-none" /></div>
           </div>
@@ -64,12 +104,17 @@ export default function AdminProductsPage() {
       <div className="mt-8 overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-[#2a2a2a] text-[#a0a0a0]">
-            <tr><th className="pb-3 pr-4 font-medium">Name</th><th className="pb-3 pr-4 font-medium">Price</th><th className="pb-3 pr-4 font-medium">Category</th><th className="pb-3 pr-4 font-medium">Featured</th><th className="pb-3 font-medium"></th></tr>
+            <tr><th className="pb-3 pr-4 font-medium">Product</th><th className="pb-3 pr-4 font-medium">Price</th><th className="pb-3 pr-4 font-medium">Category</th><th className="pb-3 pr-4 font-medium">Featured</th><th className="pb-3 font-medium"></th></tr>
           </thead>
           <tbody className="text-white">
             {products.map(p => (
               <tr key={p.id} className="border-b border-[#2a2a2a]">
-                <td className="py-3 pr-4">{p.name}</td>
+                <td className="py-3 pr-4">
+                  <div className="flex items-center gap-3">
+                    {p.image && <img src={p.image} alt="" className="h-10 w-10 rounded object-cover" />}
+                    <span>{p.name}</span>
+                  </div>
+                </td>
                 <td className="py-3 pr-4">{formatPrice(p.price)}</td>
                 <td className="py-3 pr-4">{p.category}</td>
                 <td className="py-3 pr-4">{p.featured ? "Yes" : "No"}</td>

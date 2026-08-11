@@ -91,18 +91,29 @@ const upsert = (table, cols, row) => {
 
 const ID = (n) => String(n);
 
-// Admin user
-upsert(
-  "users",
-  ["id", "name", "email", "password", "role"],
-  {
-    id: "admin-1",
-    name: "Admin",
-    email: "admin@kstyles.com",
-    password: bcrypt.hashSync("admin123", 10),
-    role: "admin",
+// Admin user — only created if missing; never overwrites an existing admin
+const adminEmail = "admin@kstyles.com";
+const existingAdmin = db.prepare("SELECT * FROM users WHERE email = ?").get(adminEmail);
+if (!existingAdmin) {
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD || "admin123";
+  if (!process.env.SEED_ADMIN_PASSWORD) {
+    console.log("WARNING: SEED_ADMIN_PASSWORD not set — using default admin123 (dev only). Set it via env in any shared/live environment.");
   }
-);
+  upsert(
+    "users",
+    ["id", "name", "email", "password", "role"],
+    {
+      id: "admin-1",
+      name: "Admin",
+      email: adminEmail,
+      password: bcrypt.hashSync(adminPassword, 10),
+      role: "admin",
+    }
+  );
+  console.log("Admin user created.");
+} else {
+  console.log("Admin user already exists — password left unchanged.");
+}
 
 // Products
 const products = [
@@ -166,4 +177,4 @@ console.log("  users:", db.prepare("SELECT COUNT(*) c FROM users").get().c);
 console.log("  products:", db.prepare("SELECT COUNT(*) c FROM products").get().c);
 console.log("  collections:", db.prepare("SELECT COUNT(*) c FROM collections").get().c);
 console.log("  blog_posts:", db.prepare("SELECT COUNT(*) c FROM blog_posts").get().c);
-console.log("Admin login: admin@kstyles.com / admin123");
+console.log("Admin login:", adminEmail, "/", process.env.SEED_ADMIN_PASSWORD ? "(from SEED_ADMIN_PASSWORD)" : "admin123 (dev default)");

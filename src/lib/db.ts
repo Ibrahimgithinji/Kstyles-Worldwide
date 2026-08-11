@@ -46,10 +46,12 @@ db.exec(`
     id TEXT PRIMARY KEY,
     orderId TEXT NOT NULL,
     productId TEXT NOT NULL,
+    name TEXT DEFAULT '',
     quantity INTEGER NOT NULL,
     size TEXT NOT NULL,
     color TEXT NOT NULL,
-    price REAL NOT NULL
+    price REAL NOT NULL,
+    image TEXT DEFAULT ''
   );
 
   CREATE TABLE IF NOT EXISTS collections (
@@ -84,5 +86,11 @@ db.exec(`
     createdAt TEXT DEFAULT (datetime('now'))
   );
 `);
+
+// Migration: add columns to existing tables
+const cols = db.prepare("PRAGMA table_info(order_items)").all() as { name: string }[];
+const has = (n: string) => cols.some(c => c.name === n);
+if (!has("name")) db.exec("ALTER TABLE order_items ADD COLUMN name TEXT DEFAULT ''");
+if (!has("image")) db.exec("ALTER TABLE order_items ADD COLUMN image TEXT DEFAULT ''");
 
 export default db;

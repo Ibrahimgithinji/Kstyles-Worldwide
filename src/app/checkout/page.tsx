@@ -1,7 +1,7 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getCart, cartTotal, clearCart } from "@/lib/cart";
+import { getCart, clearCart } from "@/lib/cart";
 import { formatPrice } from "@/lib/utils";
 export default function CheckoutPage() {
   const router = useRouter();
@@ -10,7 +10,8 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   useEffect(() => { setItems(getCart()); }, []);
-  const total = cartTotal(items);
+  const [confirmedTotal, setConfirmedTotal] = useState<number | null>(null);
+  const displayTotal = useMemo(() => items.reduce((s, i) => s + i.price * i.quantity, 0), [items]);
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -23,8 +24,9 @@ export default function CheckoutPage() {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Order failed"); return; }
+      setConfirmedTotal(data.total);
       clearCart();
-      alert("Order placed successfully! Order ID: " + data.id.slice(0, 8));
+      alert("Order placed successfully! Order ID: " + data.id.slice(0, 8) + " — Total: " + formatPrice(data.total));
       router.push("/");
     } catch { setError("Something went wrong"); }
     finally { setLoading(false); }
@@ -60,9 +62,9 @@ export default function CheckoutPage() {
               ))}
             </div>
             <div className="mt-6 space-y-2 border-t border-[#2a2a2a] pt-4 text-sm">
-              <div className="flex justify-between text-[#a0a0a0]"><span>Subtotal</span><span>{formatPrice(total)}</span></div>
+              <div className="flex justify-between text-[#a0a0a0]"><span>Subtotal</span><span>{formatPrice(displayTotal)}</span></div>
               <div className="flex justify-between text-[#a0a0a0]"><span>Shipping</span><span>Free</span></div>
-              <div className="flex justify-between text-white font-semibold"><span>Total</span><span>{formatPrice(total)}</span></div>
+              <div className="flex justify-between text-white font-semibold"><span>Total</span><span>{formatPrice(confirmedTotal ?? displayTotal)}</span></div>
             </div>
           </div>
         </div>

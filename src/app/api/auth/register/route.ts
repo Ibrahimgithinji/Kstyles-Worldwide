@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import db from "@/lib/db";
-import { signToken } from "@/lib/auth";
+import { signToken, authCookieOptions, COOKIE_NAME } from "@/lib/auth";
 import { clientIp, checkRateLimit, recordAttempt } from "@/lib/rate-limit";
 import { isEmail, isPassword, isStringLen } from "@/lib/validate";
 
@@ -33,5 +33,7 @@ export async function POST(req: NextRequest) {
   db.prepare("INSERT INTO users (id, name, email, password, role) VALUES (?, ?, ?, ?, 'customer')")
     .run(id, name, lower, hash);
   const token = signToken({ id, email: lower, role: "customer" });
-  return NextResponse.json({ token, user: { id, name, email: lower, role: "customer" } });
+  const res = NextResponse.json({ user: { id, name, email: lower, role: "customer" } });
+  res.cookies.set(COOKIE_NAME, token, authCookieOptions(60 * 60 * 24 * 7));
+  return res;
 }

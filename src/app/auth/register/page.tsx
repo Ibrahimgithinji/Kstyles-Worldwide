@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { setToken } from "@/lib/auth-client";
+import { register } from "@/lib/auth-client";
 export default function RegisterPage() {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -14,17 +14,12 @@ export default function RegisterPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (password !== confirm) { setError("Passwords do not match"); return; }
+    if (password.length < 8) { setError("Password must be at least 8 characters"); return; }
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setError(data.error || "Registration failed"); return; }
-      setToken(data.token);
+      const result = await register(name, email, password);
+      if (!result.ok) { setError(result.error || "Registration failed"); return; }
       router.push("/");
       router.refresh();
     } catch { setError("Something went wrong"); }

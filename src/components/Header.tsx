@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { getCart } from "@/lib/cart";
-import { fetchUser, clearToken, getToken, AuthUser } from "@/lib/auth-client";
+import { fetchUser, logout, AuthUser } from "@/lib/auth-client";
 
 const links = [
   { href: "/", label: "Home" },
@@ -49,8 +49,7 @@ export default function Header() {
   useEffect(() => {
     const updateCount = () => setCount(getCart().reduce((s, i) => s + i.quantity, 0));
     const updateUser = () => {
-      if (getToken()) fetchUser().then(setUser).catch(() => setUser(null));
-      else setUser(null);
+      fetchUser().then(setUser).catch(() => setUser(null));
     };
     updateCount();
     updateUser();
@@ -72,7 +71,7 @@ export default function Header() {
   }, [pathname]);
 
   function handleLogout() {
-    clearToken();
+    logout();
     setUser(null);
     setUserMenu(false);
   }

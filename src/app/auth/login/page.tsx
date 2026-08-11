@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { setToken } from "@/lib/auth-client";
+import { login } from "@/lib/auth-client";
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -14,15 +14,9 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setError(data.error || "Login failed"); return; }
-      setToken(data.token);
-      router.push(data.user.role === "admin" ? "/admin" : "/");
+      const result = await login(email, password);
+      if (!result.ok) { setError(result.error || "Login failed"); return; }
+      router.push(result.user?.role === "admin" ? "/admin" : "/");
       router.refresh();
     } catch { setError("Something went wrong"); }
     finally { setLoading(false); }

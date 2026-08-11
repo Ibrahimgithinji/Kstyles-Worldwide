@@ -93,4 +93,22 @@ const has = (n: string) => cols.some(c => c.name === n);
 if (!has("name")) db.exec("ALTER TABLE order_items ADD COLUMN name TEXT DEFAULT ''");
 if (!has("image")) db.exec("ALTER TABLE order_items ADD COLUMN image TEXT DEFAULT ''");
 
+// Admin audit trail
+db.exec(`
+  CREATE TABLE IF NOT EXISTS admin_audit (
+    id TEXT PRIMARY KEY,
+    adminId TEXT NOT NULL,
+    adminEmail TEXT NOT NULL,
+    action TEXT NOT NULL,
+    target TEXT NOT NULL,
+    details TEXT DEFAULT '',
+    createdAt TEXT DEFAULT (datetime('now'))
+  );
+`);
+
+export function logAdminAction(adminId: string, adminEmail: string, action: string, target: string, details = "") {
+  db.prepare("INSERT INTO admin_audit (id, adminId, adminEmail, action, target, details) VALUES (?, ?, ?, ?, ?, ?)")
+    .run(crypto.randomUUID(), adminId, adminEmail, action, target, String(details).slice(0, 500));
+}
+
 export default db;

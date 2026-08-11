@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser } from "@/lib/auth";
 import db from "@/lib/db";
 import { isStringLen, isPositiveNumber, isSafeUrl } from "@/lib/validate";
+import { readJson, errorResponse } from "@/lib/body";
+import { logAdminAction } from "@/lib/db";
 
 const CATEGORIES = ["tops", "bottoms", "outerwear", "accessories"];
 
@@ -15,7 +17,13 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const user = getAuthUser(req);
   if (!user || user.role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const { name, slug, description, price, category, sizes, colors, image, featured } = await req.json();
+  let body: any;
+  try {
+    body = await readJson(req);
+  } catch (e) {
+    return errorResponse(e);
+  }
+  const { name, slug, description, price, category, sizes, colors, image, featured } = body;
   if (!isStringLen(name, 2, 120)) return NextResponse.json({ error: "Name must be 2-120 characters" }, { status: 400 });
   if (!isStringLen(slug, 2, 120) || !/^[a-z0-9-]+$/.test(slug)) return NextResponse.json({ error: "Slug must be lowercase letters, numbers, dashes" }, { status: 400 });
   if (!isStringLen(description ?? "", 0, 2000)) return NextResponse.json({ error: "Description too long" }, { status: 400 });
@@ -26,5 +34,6 @@ export async function POST(req: NextRequest) {
   const id = crypto.randomUUID();
   db.prepare("INSERT INTO products (id, name, slug, description, price, category, sizes, colors, image, featured) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
     .run(id, name, slug, description || "", price, category || "", String(sizes || "S,M,L,XL").slice(0, 200), String(colors || "Black").slice(0, 200), image || "", featured ? 1 : 0);
+  logAdminAction(user.id, user.email, "product.create", id, `name=${name} price=${price}`);
   return NextResponse.json({ id });
 }

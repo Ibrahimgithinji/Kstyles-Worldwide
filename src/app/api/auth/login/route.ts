@@ -4,6 +4,7 @@ import db from "@/lib/db";
 import { signToken, authCookieOptions, COOKIE_NAME } from "@/lib/auth";
 import { clientIp, checkRateLimit, recordAttempt, recordFailure, resetRateLimit } from "@/lib/rate-limit";
 import { isEmail, isPassword } from "@/lib/validate";
+import { readJson, HttpError, errorResponse } from "@/lib/body";
 
 export async function POST(req: NextRequest) {
   const ip = clientIp(req);
@@ -16,7 +17,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { email, password } = await req.json();
+  let body: any;
+  try {
+    body = await readJson(req);
+  } catch (e) {
+    return errorResponse(e);
+  }
+  const { email, password } = body;
   if (!isEmail(email) || typeof password !== "string" || password.length === 0) {
     return NextResponse.json({ error: "Invalid email or password" }, { status: 400 });
   }

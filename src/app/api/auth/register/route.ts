@@ -4,6 +4,7 @@ import db from "@/lib/db";
 import { signToken, authCookieOptions, COOKIE_NAME } from "@/lib/auth";
 import { clientIp, checkRateLimit, recordAttempt } from "@/lib/rate-limit";
 import { isEmail, isPassword, isStringLen } from "@/lib/validate";
+import { readJson, errorResponse } from "@/lib/body";
 
 export async function POST(req: NextRequest) {
   const ip = clientIp(req);
@@ -16,7 +17,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { name, email, password } = await req.json();
+  let body: any;
+  try {
+    body = await readJson(req);
+  } catch (e) {
+    return errorResponse(e);
+  }
+  const { name, email, password } = body;
   if (!isStringLen(name, 2, 80)) return NextResponse.json({ error: "Name must be 2-80 characters" }, { status: 400 });
   if (!isEmail(email)) return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
   if (!isPassword(password)) return NextResponse.json({ error: "Password must be 8-128 characters" }, { status: 400 });

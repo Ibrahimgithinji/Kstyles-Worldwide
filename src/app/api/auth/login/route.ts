@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import db from "@/lib/db";
 import { signToken } from "@/lib/auth";
 import { clientIp, checkRateLimit, recordAttempt, recordFailure, resetRateLimit } from "@/lib/rate-limit";
+import { isEmail, isPassword } from "@/lib/validate";
 
 export async function POST(req: NextRequest) {
   const ip = clientIp(req);
@@ -16,10 +17,12 @@ export async function POST(req: NextRequest) {
   }
 
   const { email, password } = await req.json();
-  if (!email || !password) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  if (!isEmail(email) || typeof password !== "string" || password.length === 0) {
+    return NextResponse.json({ error: "Invalid email or password" }, { status: 400 });
+  }
 
-  const user = db.prepare("SELECT * FROM users WHERE email = ?").get(String(email).toLowerCase()) as any;
-  const match = user ? await bcrypt.compare(String(password), user.password) : false;
+  const user = db.prepare("SELECT * FROM users WHERE email = ?").get(email.toLowerCase()) as any;
+  const match = user ? await bcrypt.compare(password, user.password) : false;
   if (!user || !match) {
     recordAttempt(key);
     recordFailure(key);

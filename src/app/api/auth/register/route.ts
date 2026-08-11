@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import db from "@/lib/db";
 import { signToken } from "@/lib/auth";
 import { clientIp, checkRateLimit, recordAttempt } from "@/lib/rate-limit";
+import { isEmail, isPassword, isStringLen } from "@/lib/validate";
 
 export async function POST(req: NextRequest) {
   const ip = clientIp(req);
@@ -16,18 +17,21 @@ export async function POST(req: NextRequest) {
   }
 
   const { name, email, password } = await req.json();
-  if (!name || !email || !password) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  if (!isStringLen(name, 2, 80)) return NextResponse.json({ error: "Name must be 2-80 characters" }, { status: 400 });
+  if (!isEmail(email)) return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
+  if (!isPassword(password)) return NextResponse.json({ error: "Password must be 8-128 characters" }, { status: 400 });
 
-  const existing = db.prepare("SELECT id FROM users WHERE email = ?").get(String(email).toLowerCase());
+  const lower = email.toLowerCase();
+  const existing = db.prepare("SELECT id FROM users WHERE email = ?").get(lower);
   if (existing) {
     recordAttempt(key);
     return NextResponse.json({ error: "Email in use" }, { status: 400 });
   }
 
-  const hash = await bcrypt.hash(String(password), 10);
+  const hash = await bcrypt.hash(password, 10);
   const id = crypto.randomUUID();
   db.prepare("INSERT INTO users (id, name, email, password, role) VALUES (?, ?, ?, ?, 'customer')")
-    .run(id, String(name).slice(0, 80), String(email).toLowerCase(), hash);
-  const token = signToken({ id, email: String(email).toLowerCase(), role: "customer" });
-  return NextResponse.json({ token, user: { id, name: String(name).slice(0, 80), email: String(email).toLowerCase(), role: "customer" } });
+    .run(id, name, lower, hash);
+  const token = signToken({ id, email: lower, role: "customer" });
+  return NextResponse.json({ token, user: { id, name, email: lower, role: "customer" } });
 }

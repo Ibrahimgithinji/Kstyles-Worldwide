@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
+import { isEmail, isStringLen } from "@/lib/validate";
 
 export async function POST(req: NextRequest) {
   const { email, firstName, lastName, address, city, zip, country, items } = await req.json();
-  if (!email || !firstName || !lastName || !address || !city || !zip || !country || !items || !Array.isArray(items) || items.length === 0) {
-    return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  if (!isEmail(email)) return NextResponse.json({ error: "Invalid email" }, { status: 400 });
+  if (!isStringLen(firstName, 1, 80) || !isStringLen(lastName, 1, 80)) return NextResponse.json({ error: "Invalid name" }, { status: 400 });
+  if (!isStringLen(address, 3, 200) || !isStringLen(city, 2, 80) || !isStringLen(zip, 1, 20) || !isStringLen(country, 2, 80)) {
+    return NextResponse.json({ error: "Invalid address details" }, { status: 400 });
+  }
+  if (!items || !Array.isArray(items) || items.length === 0 || items.length > 50) {
+    return NextResponse.json({ error: "Missing or invalid items" }, { status: 400 });
   }
 
   const lookups = db.prepare("SELECT id, name, price, image FROM products WHERE id = ?");

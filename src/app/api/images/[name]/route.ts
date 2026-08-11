@@ -10,7 +10,6 @@ const extToMime: Record<string, string> = {
   ".webp": "image/webp",
   ".gif": "image/gif",
   ".avif": "image/avif",
-  ".svg": "image/svg+xml",
 };
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ name: string }> }) {
@@ -29,6 +28,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ nam
         "Content-Type": mime,
         "Content-Length": String(info.size),
         "Cache-Control": "public, max-age=31536000, immutable",
+        "Content-Security-Policy": "default-src 'none'; sandbox",
+        "X-Content-Type-Options": "nosniff",
       },
     });
   } catch {

@@ -7,27 +7,34 @@ Luxury streetwear for the modern icon. A full e-commerce platform built with Nex
 - Next.js 16 (App Router) + React 19 + TypeScript
 - Tailwind CSS v4 — dark luxury theme (black `#0a0a0a`, gold `#d4af37`)
 - SQLite via `better-sqlite3` (database at `prisma/dev.db`)
-- Auth: bcrypt + JWT (token stored in localStorage)
+- Auth: bcrypt + JWT stored in an HTTP-only cookie
 
 ## Getting Started
 
 ```bash
 npm install
+npm run seed
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
+Before running the seed, copy `.env.example` to `.env` and set a unique
+`SEED_ADMIN_PASSWORD` with at least 12 characters. Keep `.env` private; it is
+ignored by Git.
+
 ### Database Setup
 
-The app auto-creates its tables on first run, but they must be seeded to have data:
+The app auto-creates its tables on first run, but they must be seeded to have data.
+The seed creates the initial admin account, products, collections, and blog posts:
 
 ```bash
-node prisma/seed.js          # admin user + products
-node prisma/seed-extra.js    # collections + blog posts
+npm run seed
 ```
 
-Demo admin account: `admin@kstyles.com` / `admin123`
+The initial admin email is `admin@kstyles.com`; its password is the private
+`SEED_ADMIN_PASSWORD` value from `.env`. The seed will refuse to create an
+admin account if that value is missing or shorter than 12 characters.
 
 > Note: `prisma/dev.db` is gitignored, so a fresh clone requires re-seeding.
 

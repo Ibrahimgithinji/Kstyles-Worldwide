@@ -81,6 +81,35 @@ db.exec(`
     date TEXT NOT NULL,
     tags TEXT DEFAULT ''
   );
+  CREATE TABLE IF NOT EXISTS designs (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    slug TEXT UNIQUE NOT NULL,
+    description TEXT NOT NULL,
+    price REAL NOT NULL,
+    sizePrices TEXT DEFAULT '{}',
+    image TEXT DEFAULT '',
+    tags TEXT DEFAULT '',
+    active INTEGER DEFAULT 1,
+    createdAt TEXT DEFAULT (datetime('now'))
+  );
+  CREATE TABLE IF NOT EXISTS design_orders (
+    id TEXT PRIMARY KEY,
+    designId TEXT NOT NULL,
+    designName TEXT NOT NULL,
+    size TEXT NOT NULL,
+    price REAL NOT NULL,
+    quantity INTEGER NOT NULL,
+    fabric TEXT DEFAULT '',
+    color TEXT DEFAULT '',
+    dimensions TEXT DEFAULT '',
+    notes TEXT DEFAULT '',
+    customerName TEXT NOT NULL,
+    email TEXT NOT NULL,
+    phone TEXT DEFAULT '',
+    status TEXT DEFAULT 'pending',
+    createdAt TEXT DEFAULT (datetime('now'))
+  );
 `);
 
 const upsert = (table, cols, row) => {
@@ -179,9 +208,74 @@ const blogPosts = [
 ];
 for (const p of blogPosts) upsert("blog_posts", Object.keys(p), p);
 
+// Sample made-to-order designs — only seeded when the designs table is empty,
+// so designs created or hidden by the admin are never overwritten.
+const designCount = db.prepare("SELECT COUNT(*) c FROM designs").get().c;
+if (designCount === 0) {
+  const designs = [
+    {
+      id: "design-sig-suit", name: "The Kstyles Signature Suit", slug: "kstyles-signature-suit",
+      description: "Our flagship made-to-order two-piece suit. Hand-finished lapels, half-canvas construction and a silhouette cut to your exact measurements. Choose your fabric and lining, we do the rest.",
+      price: 329, sizePrices: JSON.stringify({ S: 309, M: 329, L: 349, XL: 369 }),
+      image: "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=900&q=80",
+      tags: "suit,bespoke,formal", active: 1,
+    },
+    {
+      id: "design-exec-blazer", name: "The Executive Blazer", slug: "executive-blazer",
+      description: "A sharp, single-breasted blazer built for boardrooms and nightlife alike. Structured shoulders, pearl-lined interior, and a taper that flatters without restricting.",
+      price: 209, sizePrices: JSON.stringify({ S: 189, M: 209, L: 229, XL: 249 }),
+      image: "https://images.unsplash.com/photo-1592878904946-b3cd8ae243d0?auto=format&fit=crop&w=900&q=80",
+      tags: "blazer,formal,workwear", active: 1,
+    },
+    {
+      id: "design-heritage-kaftan", name: "The Heritage Kaftan", slug: "heritage-kaftan",
+      description: "A flowing, embroidered kaftan celebrating East African tailoring heritage. Woven fabrics, hand-stitched trims, and room to move — made for weddings, Eid and grand entrances.",
+      price: 249, sizePrices: JSON.stringify({ S: 229, M: 249, L: 269, XL: 289 }),
+      image: "https://images.unsplash.com/photo-1617127365659-c47fa864d8bc?auto=format&fit=crop&w=900&q=80",
+      tags: "kaftan,traditional,celebrations", active: 1,
+    },
+    {
+      id: "design-evening-gown", name: "The Evening Gown", slug: "evening-gown",
+      description: "A floor-length gown draped in premium fabric with a fitted bodice and flowing skirt. Custom-lined to your preference, finished with concealed boning for structure.",
+      price: 389, sizePrices: JSON.stringify({ S: 369, M: 389, L: 409, XL: 429 }),
+      image: "https://images.unsplash.com/photo-1610652492500-ded49ceeb378?auto=format&fit=crop&w=900&q=80",
+      tags: "gown,formal,women", active: 1,
+    },
+    {
+      id: "design-safari-jacket", name: "The Safari Jacket", slug: "safari-jacket",
+      description: "Four-pocket safari jacket in breathable cotton drill. Belted waist, horn buttons and a relaxed collar — the perfect bridge between outdoor utility and urban polish.",
+      price: 179, sizePrices: JSON.stringify({ S: 159, M: 179, L: 199, XL: 219 }),
+      image: "https://images.unsplash.com/photo-1516257984-b1b4d707412e?auto=format&fit=crop&w=900&q=80",
+      tags: "jacket,casual,outdoor", active: 1,
+    },
+    {
+      id: "design-statement-coat", name: "The Statement Coat", slug: "statement-coat",
+      description: "An oversized wool-blend coat with dramatic collar and double-breasted closure. Fully lined, hand-finished edges, and enough presence to end any outfit debate.",
+      price: 429, sizePrices: JSON.stringify({ S: 409, M: 429, L: 449, XL: 469 }),
+      image: "https://images.unsplash.com/photo-1620012253295-c15cc3e65df4?auto=format&fit=crop&w=900&q=80",
+      tags: "coat,outerwear,winter", active: 1,
+    },
+    {
+      id: "design-ceremony-suit", name: "The Ceremony Suit", slug: "ceremony-suit",
+      description: "Our showpiece three-piece suit for weddings and milestone celebrations. Contrasting waistcoat, satin lapels, and a cut designed to be remembered.",
+      price: 459, sizePrices: JSON.stringify({ S: 439, M: 459, L: 479, XL: 499 }),
+      image: "https://images.unsplash.com/photo-1598808503746-f34c53b9323e?auto=format&fit=crop&w=900&q=80",
+      tags: "suit,wedding,three-piece", active: 1,
+    },
+  ];
+  for (const d of designs) {
+    db.prepare("INSERT INTO designs (id, name, slug, description, price, sizePrices, image, tags, active, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))")
+      .run(d.id, d.name, d.slug, d.description, d.price, d.sizePrices, d.image, d.tags, d.active);
+  }
+  console.log("Sample designs created (" + designs.length + ").");
+} else {
+  console.log("Designs table not empty — sample designs skipped.");
+}
+
 console.log("Seed complete!");
 console.log("  users:", db.prepare("SELECT COUNT(*) c FROM users").get().c);
 console.log("  products:", db.prepare("SELECT COUNT(*) c FROM products").get().c);
 console.log("  collections:", db.prepare("SELECT COUNT(*) c FROM collections").get().c);
 console.log("  blog_posts:", db.prepare("SELECT COUNT(*) c FROM blog_posts").get().c);
+console.log("  designs:", db.prepare("SELECT COUNT(*) c FROM designs").get().c);
 console.log("Admin login email:", adminEmail);

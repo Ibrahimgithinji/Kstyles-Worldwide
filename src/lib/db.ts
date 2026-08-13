@@ -92,6 +92,9 @@ const cols = db.prepare("PRAGMA table_info(order_items)").all() as { name: strin
 const has = (n: string) => cols.some(c => c.name === n);
 if (!has("name")) db.exec("ALTER TABLE order_items ADD COLUMN name TEXT DEFAULT ''");
 if (!has("image")) db.exec("ALTER TABLE order_items ADD COLUMN image TEXT DEFAULT ''");
+const doCols = db.prepare("PRAGMA table_info(design_orders)").all() as { name: string }[];
+const doHas = (n: string) => doCols.some(c => c.name === n);
+if (!doHas("phone")) db.exec("ALTER TABLE design_orders ADD COLUMN phone TEXT DEFAULT ''");
 
 // Admin audit trail
 db.exec(`
@@ -106,9 +109,44 @@ db.exec(`
   );
 `);
 
+// Designs (made-to-order gallery)
+db.exec(`
+  CREATE TABLE IF NOT EXISTS designs (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    slug TEXT UNIQUE NOT NULL,
+    description TEXT NOT NULL,
+    price REAL NOT NULL,
+    sizePrices TEXT DEFAULT '{}',
+    image TEXT DEFAULT '',
+    tags TEXT DEFAULT '',
+    active INTEGER DEFAULT 1,
+    createdAt TEXT DEFAULT (datetime('now'))
+  );
+  CREATE TABLE IF NOT EXISTS design_orders (
+    id TEXT PRIMARY KEY,
+    designId TEXT NOT NULL,
+    designName TEXT NOT NULL,
+    size TEXT NOT NULL,
+    price REAL NOT NULL,
+    quantity INTEGER NOT NULL,
+    fabric TEXT DEFAULT '',
+    color TEXT DEFAULT '',
+    dimensions TEXT DEFAULT '',
+    notes TEXT DEFAULT '',
+    customerName TEXT NOT NULL,
+    email TEXT NOT NULL,
+    phone TEXT DEFAULT '',
+    status TEXT DEFAULT 'pending',
+    createdAt TEXT DEFAULT (datetime('now'))
+  );
+`);
+
 export function logAdminAction(adminId: string, adminEmail: string, action: string, target: string, details = "") {
   db.prepare("INSERT INTO admin_audit (id, adminId, adminEmail, action, target, details) VALUES (?, ?, ?, ?, ?, ?)")
     .run(crypto.randomUUID(), adminId, adminEmail, action, target, String(details).slice(0, 500));
 }
+
+export const DESIGN_STATUSES = ["pending", "contacted", "in_production", "complete", "cancelled"] as const;
 
 export default db;

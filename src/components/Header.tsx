@@ -8,6 +8,7 @@ import { fetchUser, logout, AuthUser } from "@/lib/auth-client";
 const links = [
   { href: "/", label: "Home" },
   { href: "/shop", label: "Shop" },
+  { href: "/designs", label: "Designs" },
   { href: "/collections", label: "Collections" },
   { href: "/blog", label: "Blog" },
 ];

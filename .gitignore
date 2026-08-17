@@ -6,7 +6,6 @@ dist
 *.log
 /prisma/dev.db
 /src/generated/prisma
-public/images
 uploads
 skills-lock.json
 .agents

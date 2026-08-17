@@ -189,6 +189,24 @@ const products = [
     price: 219, image: "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?auto=format&fit=crop&w=900&q=80",
     category: "bottoms", sizes: "28,30,32,34,36", colors: "Black,Navy,Charcoal", featured: 0,
   },
+  {
+    id: ID(7), name: "K Styles Jersey", slug: "k-styles-jersey",
+    description: "Signature K Styles jersey — premium performance fabric with the classic K branding. Made to order.",
+    price: 1899, image: "/images/designs/jersey-1.png",
+    category: "jerseys", sizes: "S,M,L,XL,XXL", colors: "Black", featured: 1,
+  },
+  {
+    id: ID(8), name: "K Styles Custom Jersey", slug: "k-styles-custom-jersey",
+    description: "Fully custom K Styles jersey — your name and number, tailored fit, top-grade material.",
+    price: 2399, image: "/images/designs/jersey-2.png",
+    category: "jerseys", sizes: "S,M,L,XL,XXL", colors: "Black", featured: 1,
+  },
+  {
+    id: ID(9), name: "K Styles Signature Jersey", slug: "k-styles-signature-jersey",
+    description: "The limited Signature edition jersey. Bold branding, heavyweight knit, made for the stands.",
+    price: 2099, image: "/images/designs/jersey-3.png",
+    category: "jerseys", sizes: "S,M,L,XL,XXL", colors: "Black", featured: 1,
+  },
 ];
 for (const p of products) upsert("products", Object.keys(p), p);
 

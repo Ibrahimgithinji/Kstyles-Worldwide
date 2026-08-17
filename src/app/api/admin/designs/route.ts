@@ -46,6 +46,9 @@ export async function POST(req: NextRequest) {
     if (!isPositiveNumber(v) || v > 100000) return NextResponse.json({ error: `Invalid price for size ${k}` }, { status: 400 });
   }
 
+  const existing = db.prepare("SELECT id FROM designs WHERE slug = ?").get(slug);
+  if (existing) return NextResponse.json({ error: "Slug already in use — choose another" }, { status: 409 });
+
   const id = crypto.randomUUID();
   db.prepare("INSERT INTO designs (id, name, slug, description, price, sizePrices, image, tags, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
     .run(id, name, slug, description || "", price, JSON.stringify(parsedSizes), image || "", String(tags ?? "").slice(0, 200), active === false ? 0 : 1);

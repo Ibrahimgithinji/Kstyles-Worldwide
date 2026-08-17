@@ -62,8 +62,9 @@ export default function AdminDesignsPage() {
     load();
   }
 
-  async function del(id: string) {
-    await fetch("/api/admin/designs/" + id, { method: "DELETE", headers: getAuthHeaders() });
+  async function del(d: Design) {
+    if (!window.confirm(`Delete "${d.name}"? This cannot be undone.`)) return;
+    await fetch("/api/admin/designs/" + d.id, { method: "DELETE", headers: getAuthHeaders() });
     load();
   }
 
@@ -125,7 +126,7 @@ export default function AdminDesignsPage() {
                 <td className="py-3 pr-4">{d.active ? <span className="text-green-400">Active</span> : <span className="text-[#a0a0a0]">Hidden</span>}</td>
                 <td className="py-3 text-right">
                   <button onClick={() => toggleActive(d)} className="mr-3 text-[#d4af37] hover:text-[#b8960f]">{d.active ? "Hide" : "Show"}</button>
-                  <button onClick={() => del(d.id)} className="text-red-400 hover:text-red-300">Delete</button>
+                  <button onClick={() => del(d)} className="text-red-400 hover:text-red-300">Delete</button>
                 </td>
               </tr>
             ))}

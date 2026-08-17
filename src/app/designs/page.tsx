@@ -14,9 +14,9 @@ interface Design {
 }
 
 export default function DesignsPage() {
-  const [designs, setDesigns] = useState<Design[]>([]);
+  const [designs, setDesigns] = useState<Design[] | null>(null);
   useEffect(() => {
-    fetch("/api/designs").then(r => r.json()).then(d => setDesigns(d.designs ?? [])).catch(() => {});
+    fetch("/api/designs").then(r => r.json()).then(d => setDesigns(d.designs ?? [])).catch(() => setDesigns([]));
   }, []);
 
   return (
@@ -30,7 +30,11 @@ export default function DesignsPage() {
           </p>
         </div>
 
-        {designs.length === 0 ? (
+        {designs === null ? (
+          <div className="mt-16 rounded-md border border-[#2a2a2a] bg-[#111] p-12 text-center">
+            <p className="text-[#a0a0a0]">Loading designs…</p>
+          </div>
+        ) : designs.length === 0 ? (
           <div className="mt-16 rounded-md border border-[#2a2a2a] bg-[#111] p-12 text-center">
             <p className="text-[#a0a0a0]">New designs are being added. Check back soon.</p>
           </div>

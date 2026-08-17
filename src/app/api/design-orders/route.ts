@@ -2,8 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import { isEmail, isStringLen, isPositiveNumber } from "@/lib/validate";
 import { readJson, errorResponse } from "@/lib/body";
+import { clientIp, checkRateLimit, recordAttempt } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
+  const ip = clientIp(req);
+  const limit = checkRateLimit(`design-order:${ip}`);
+  if (!limit.allowed) {
+    return NextResponse.json({ error: `Too many requests. Try again in ${limit.retryAfterSeconds}s.` }, { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } });
+  }
   let body: any;
   try {
     body = await readJson(req);
@@ -26,6 +32,7 @@ export async function POST(req: NextRequest) {
 
   const design = db.prepare("SELECT * FROM designs WHERE id = ? AND active = 1").get(designId) as any;
   if (!design) return NextResponse.json({ error: "Design not found" }, { status: 404 });
+  recordAttempt(`design-order:${ip}`);
 
   let sizePrices: Record<string, number> = {};
   try { sizePrices = JSON.parse(design.sizePrices || "{}"); } catch { /* ignore */ }

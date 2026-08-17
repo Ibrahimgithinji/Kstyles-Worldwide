@@ -8,7 +8,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const user = getAuthUser(req);
   if (!user || user.role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
-  const existing = db.prepare("SELECT id FROM designs WHERE id = ?").get(id);
+  const existing = db.prepare("SELECT id, sizePrices FROM designs WHERE id = ?").get(id) as any;
   if (!existing) return NextResponse.json({ error: "Design not found" }, { status: 404 });
 
   let body: any;
@@ -25,20 +25,30 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!isPositiveNumber(price) || price > 100000) return NextResponse.json({ error: "Base price must be positive (max 100000)" }, { status: 400 });
   if (image && !isSafeUrl(image)) return NextResponse.json({ error: "Invalid image URL" }, { status: 400 });
 
-  let parsedSizes: Record<string, number> = {};
+  let parsedSizes: Record<string, number> | null = null;
   if (sizePrices !== undefined) {
     if (typeof sizePrices === "string") {
       try { parsedSizes = JSON.parse(sizePrices); } catch { parsedSizes = {}; }
     } else if (typeof sizePrices === "object" && sizePrices) {
       parsedSizes = sizePrices;
     }
-    for (const [k, v] of Object.entries(parsedSizes)) {
+    for (const [k, v] of Object.entries(parsedSizes ?? {})) {
       if (!isPositiveNumber(v) || v > 100000) return NextResponse.json({ error: `Invalid price for size ${k}` }, { status: 400 });
     }
   }
 
+  const slugOwner = db.prepare("SELECT id FROM designs WHERE slug = ? AND id != ?").get(slug, id);
+  if (slugOwner) return NextResponse.json({ error: "Slug already in use — choose another" }, { status: 409 });
+
+  let finalSizes: Record<string, number>;
+  if (parsedSizes) {
+    finalSizes = parsedSizes;
+  } else {
+    try { finalSizes = JSON.parse(existing.sizePrices || "{}"); } catch { finalSizes = {}; }
+  }
+
   db.prepare("UPDATE designs SET name=?, slug=?, description=?, price=?, sizePrices=?, image=?, tags=?, active=? WHERE id=?")
-    .run(name, slug, description ?? "", price, JSON.stringify(parsedSizes), image || "", String(tags ?? "").slice(0, 200), active === false ? 0 : 1, id);
+    .run(name, slug, description ?? "", price, JSON.stringify(finalSizes), image || "", String(tags ?? "").slice(0, 200), active === false ? 0 : 1, id);
   logAdminAction(user.id, user.email, "design.update", id, `name=${name} base=${price}`);
   return NextResponse.json({ success: true });
 }

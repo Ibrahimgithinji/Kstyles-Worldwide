@@ -95,6 +95,9 @@ if (!has("image")) db.exec("ALTER TABLE order_items ADD COLUMN image TEXT DEFAUL
 const doCols = db.prepare("PRAGMA table_info(design_orders)").all() as { name: string }[];
 const doHas = (n: string) => doCols.some(c => c.name === n);
 if (!doHas("phone")) db.exec("ALTER TABLE design_orders ADD COLUMN phone TEXT DEFAULT ''");
+const userCols = db.prepare("PRAGMA table_info(users)").all() as { name: string }[];
+const userHas = (n: string) => userCols.some(c => c.name === n);
+if (!userHas("password_changed_at")) db.exec("ALTER TABLE users ADD COLUMN password_changed_at INTEGER NOT NULL DEFAULT 0");
 
 // Admin audit trail
 db.exec(`

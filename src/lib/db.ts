@@ -98,6 +98,9 @@ if (!doHas("phone")) db.exec("ALTER TABLE design_orders ADD COLUMN phone TEXT DE
 const userCols = db.prepare("PRAGMA table_info(users)").all() as { name: string }[];
 const userHas = (n: string) => userCols.some(c => c.name === n);
 if (!userHas("password_changed_at")) db.exec("ALTER TABLE users ADD COLUMN password_changed_at INTEGER NOT NULL DEFAULT 0");
+const designCols = db.prepare("PRAGMA table_info(designs)").all() as { name: string }[];
+const designHas = (n: string) => designCols.some(c => c.name === n);
+if (!designHas("category")) db.exec("ALTER TABLE designs ADD COLUMN category TEXT DEFAULT ''");
 
 // Admin audit trail
 db.exec(`
@@ -122,6 +125,7 @@ db.exec(`
     price REAL NOT NULL,
     sizePrices TEXT DEFAULT '{}',
     image TEXT DEFAULT '',
+    category TEXT DEFAULT '',
     tags TEXT DEFAULT '',
     active INTEGER DEFAULT 1,
     createdAt TEXT DEFAULT (datetime('now'))

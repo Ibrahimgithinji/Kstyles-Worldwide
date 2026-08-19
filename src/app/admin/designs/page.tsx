@@ -4,10 +4,11 @@ import Link from "next/link";
 import { getAuthHeaders } from "@/lib/auth-client";
 import { formatPrice, waLink, orderSummary } from "@/lib/utils";
 
-interface Design { id: string; name: string; slug: string; description: string; price: number; sizePrices: string; image: string; tags: string; active: number; }
+interface Design { id: string; name: string; slug: string; description: string; price: number; sizePrices: string; image: string; category: string; tags: string; active: number; }
 interface DesignOrder { id: string; designName: string; size: string; price: number; quantity: number; fabric: string; color: string; dimensions: string; notes: string; customerName: string; email: string; phone: string; status: string; createdAt: string; }
 
 const ORDER_STATUSES = ["pending", "contacted", "in_production", "complete", "cancelled"];
+const DESIGN_CATEGORIES = ["Suits", "Blazers", "Kaftans", "Dresses & Gowns", "Jackets & Coats", "Jerseys", "Other"];
 
 export default function AdminDesignsPage() {
   const [designs, setDesigns] = useState<Design[]>([]);
@@ -15,7 +16,7 @@ export default function AdminDesignsPage() {
   const [auth, setAuth] = useState<"loading" | "ok" | "denied">("loading");
   const [showForm, setShowForm] = useState(false);
   const [msg, setMsg] = useState("");
-  const [form, setForm] = useState({ name: "", slug: "", description: "", price: "", image: "", tags: "", sizePrices: "S:149,M:169,L:189,XL:199", active: true });
+  const [form, setForm] = useState({ name: "", slug: "", description: "", price: "", image: "", category: "", tags: "", sizePrices: "S:149,M:169,L:189,XL:199", active: true });
 
   async function load() {
     const res = await fetch("/api/admin/designs", { headers: getAuthHeaders() });
@@ -49,7 +50,7 @@ export default function AdminDesignsPage() {
       body: JSON.stringify({ ...form, price: Number(form.price), sizePrices, active: form.active }),
     });
     const data = await res.json();
-    if (res.ok) { setMsg("Design added!"); setShowForm(false); setForm({ name: "", slug: "", description: "", price: "", image: "", tags: "", sizePrices: "S:149,M:169,L:189,XL:199", active: true }); load(); }
+    if (res.ok) { setMsg("Design added!"); setShowForm(false); setForm({ name: "", slug: "", description: "", price: "", image: "", category: "", tags: "", sizePrices: "S:149,M:169,L:189,XL:199", active: true }); load(); }
     else setMsg(data.error || "Failed to add design.");
   }
 
@@ -57,7 +58,7 @@ export default function AdminDesignsPage() {
     await fetch("/api/admin/designs/" + d.id, {
       method: "PUT",
       headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-      body: JSON.stringify({ name: d.name, slug: d.slug, description: d.description, price: d.price, sizePrices: d.sizePrices, image: d.image, tags: d.tags, active: d.active ? 0 : 1 }),
+      body: JSON.stringify({ name: d.name, slug: d.slug, description: d.description, price: d.price, sizePrices: d.sizePrices, image: d.image, category: d.category, tags: d.tags, active: d.active ? 0 : 1 }),
     });
     load();
   }
@@ -95,11 +96,19 @@ export default function AdminDesignsPage() {
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div><label className="block text-sm font-semibold text-white">Slug</label><input required value={form.slug} onChange={e => setForm({ ...form, slug: e.target.value })} placeholder="custom-blazer" className={input} /></div>
+            <div><label className="block text-sm font-semibold text-white">Category</label>
+              <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} className={input}>
+                <option value="">Uncategorized</option>
+                {DESIGN_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
             <div><label className="block text-sm font-semibold text-white">Image URL <span className="text-[#a0a0a0]">(or upload via Products uploader)</span></label><input value={form.image} onChange={e => setForm({ ...form, image: e.target.value })} className={input} /></div>
+            <div><label className="block text-sm font-semibold text-white">Tags</label><input value={form.tags} onChange={e => setForm({ ...form, tags: e.target.value })} className={input} /></div>
           </div>
           <div><label className="block text-sm font-semibold text-white">Description</label><textarea required rows={2} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className={input} /></div>
           <div><label className="block text-sm font-semibold text-white">Size Prices (format: S:149,M:169,L:189,XL:199)</label><input value={form.sizePrices} onChange={e => setForm({ ...form, sizePrices: e.target.value })} className={input} /></div>
-          <div><label className="block text-sm font-semibold text-white">Tags</label><input value={form.tags} onChange={e => setForm({ ...form, tags: e.target.value })} className={input} /></div>
           <label className="flex items-center gap-2 text-sm text-white"><input type="checkbox" checked={form.active} onChange={e => setForm({ ...form, active: e.target.checked })} /> Active (visible in gallery)</label>
           <button type="submit" className="rounded-md bg-[#d4af37] px-6 py-2 text-sm font-semibold text-black hover:bg-[#b8960f] transition-colors">Save Design</button>
         </form>
@@ -108,7 +117,7 @@ export default function AdminDesignsPage() {
       <div className="mt-8 overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-[#2a2a2a] text-[#a0a0a0]">
-            <tr><th className="pb-3 pr-4 font-medium">Design</th><th className="pb-3 pr-4 font-medium">Base</th><th className="pb-3 pr-4 font-medium">Status</th><th className="pb-3 font-medium"></th></tr>
+            <tr><th className="pb-3 pr-4 font-medium">Design</th><th className="pb-3 pr-4 font-medium">Category</th><th className="pb-3 pr-4 font-medium">Base</th><th className="pb-3 pr-4 font-medium">Status</th><th className="pb-3 font-medium"></th></tr>
           </thead>
           <tbody className="text-white">
             {designs.map(d => (
@@ -122,6 +131,7 @@ export default function AdminDesignsPage() {
                     </div>
                   </div>
                 </td>
+                <td className="py-3 pr-4">{d.category ? <span className="text-xs text-[#a0a0a0]">{d.category}</span> : <span className="text-xs text-[#2a2a2a]">—</span>}</td>
                 <td className="py-3 pr-4">{formatPrice(d.price)}</td>
                 <td className="py-3 pr-4">{d.active ? <span className="text-green-400">Active</span> : <span className="text-[#a0a0a0]">Hidden</span>}</td>
                 <td className="py-3 text-right">

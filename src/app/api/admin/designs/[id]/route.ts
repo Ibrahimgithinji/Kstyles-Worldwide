@@ -17,11 +17,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   } catch (e) {
     return errorResponse(e);
   }
-  const { name, slug, description, price, sizePrices, image, tags, active } = body;
+  const { name, slug, description, price, sizePrices, image, category, tags, active } = body;
 
   if (!isStringLen(name, 2, 120)) return NextResponse.json({ error: "Name must be 2-120 characters" }, { status: 400 });
   if (!isStringLen(slug, 2, 120) || !/^[a-z0-9-]+$/.test(slug)) return NextResponse.json({ error: "Slug must be lowercase letters, numbers, dashes" }, { status: 400 });
   if (!isStringLen(description ?? "", 0, 2000)) return NextResponse.json({ error: "Description too long" }, { status: 400 });
+  if (!isStringLen(category ?? "", 0, 40)) return NextResponse.json({ error: "Category must be 40 characters or fewer" }, { status: 400 });
   if (!isPositiveNumber(price) || price > 100000) return NextResponse.json({ error: "Base price must be positive (max 100000)" }, { status: 400 });
   if (image && !isSafeUrl(image)) return NextResponse.json({ error: "Invalid image URL" }, { status: 400 });
 
@@ -47,8 +48,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     try { finalSizes = JSON.parse(existing.sizePrices || "{}"); } catch { finalSizes = {}; }
   }
 
-  db.prepare("UPDATE designs SET name=?, slug=?, description=?, price=?, sizePrices=?, image=?, tags=?, active=? WHERE id=?")
-    .run(name, slug, description ?? "", price, JSON.stringify(finalSizes), image || "", String(tags ?? "").slice(0, 200), active === false ? 0 : 1, id);
+  db.prepare("UPDATE designs SET name=?, slug=?, description=?, price=?, sizePrices=?, image=?, category=?, tags=?, active=? WHERE id=?")
+    .run(name, slug, description ?? "", price, JSON.stringify(finalSizes), image || "", String(category ?? "").slice(0, 40), String(tags ?? "").slice(0, 200), active === false || active === 0 ? 0 : 1, id);
   logAdminAction(user.id, user.email, "design.update", id, `name=${name} base=${price}`);
   return NextResponse.json({ success: true });
 }

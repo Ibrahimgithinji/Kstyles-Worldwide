@@ -1,8 +1,11 @@
 import jwt from "jsonwebtoken";
 import { NextRequest } from "next/server";
+import crypto from "crypto";
 import db from "@/lib/db";
 
-const DEV_FALLBACK_SECRET = "kstyles-dev-secret-2025";
+// Random per-boot secret for environments without JWT_SECRET (dev only).
+// Never reuse across restarts; production requires JWT_SECRET explicitly.
+const DEV_FALLBACK_SECRET = crypto.randomBytes(32).toString("hex");
 
 function getSecret(): string {
   const env = process.env.JWT_SECRET;

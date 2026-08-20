@@ -1,20 +1,39 @@
+"use client";
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+
 export default function Hero() {
+  const [hasVideo, setHasVideo] = useState(false);
+
+  useEffect(() => {
+    fetch('/videos/brand.mp4', { method: 'HEAD' })
+      .then(r => { if (r.ok) setHasVideo(true); })
+      .catch(() => {});
+  }, []);
+
   return (
     <section className='relative flex min-h-screen items-center justify-center overflow-hidden'>
       <div className='absolute inset-0'>
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload='metadata'
-          poster='/images/hero.jpg'
-          aria-hidden='true'
-          className='hero-media h-full w-full object-cover'
-        >
-          <source src='/videos/brand.mp4' type='video/mp4' />
-        </video>
+        {hasVideo ? (
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload='metadata'
+            aria-hidden='true'
+            className='h-full w-full object-cover'
+          >
+            <source src='/videos/brand.mp4' type='video/mp4' />
+          </video>
+        ) : (
+          <img
+            src='/images/hero.jpg'
+            alt=''
+            aria-hidden='true'
+            className='hero-media h-full w-full object-cover'
+          />
+        )}
       </div>
       <div className='absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black' />
       <div className='relative z-10 mx-auto max-w-4xl px-4 text-center'>

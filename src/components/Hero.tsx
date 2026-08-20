@@ -22,7 +22,7 @@ export default function Hero() {
             playsInline
             preload='metadata'
             aria-hidden='true'
-            className='h-full w-full object-cover'
+            className='h-full w-full object-cover object-[50%_15%]'
           >
             <source src='/videos/brand.mp4' type='video/mp4' />
           </video>
@@ -31,7 +31,7 @@ export default function Hero() {
             src='/images/hero.jpg'
             alt=''
             aria-hidden='true'
-            className='hero-media h-full w-full object-cover'
+            className='hero-media h-full w-full object-cover object-[50%_15%]'
           />
         )}
       </div>

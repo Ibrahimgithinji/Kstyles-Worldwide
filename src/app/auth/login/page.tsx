@@ -77,7 +77,7 @@ function AuthPage() {
             <>Already have an account? <Link href="/auth/login" className="text-[#d4af37] hover:underline">Sign In</Link></>
           )}
         </p>
-        {mode === "login" && <p className="mt-4 text-center text-xs text-[#a0a0a0]">Admin demo: admin@kstyles.com / admin123</p>}
+        {mode === "login" && <p className="mt-4 text-center text-xs text-[#a0a0a0]">Access the members&apos; area of Kstyles Worldwide.</p>}
       </div>
     </div>
   );

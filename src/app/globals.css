@@ -23,6 +23,15 @@ body {
   color: var(--foreground);
 }
 
+@keyframes hero-zoom {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.12); }
+}
+
+.hero-media {
+  animation: hero-zoom 24s ease-in-out infinite alternate;
+}
+
 ::-webkit-scrollbar {
   width: 8px;
 }

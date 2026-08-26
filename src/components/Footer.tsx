@@ -33,7 +33,7 @@ export default function Footer() {
           </div>
         </div>
         <div className='mt-12 border-t border-[#2a2a2a] pt-8 text-center text-sm text-[#a0a0a0]'>
-          <p>&copy; 2025 Kstyles Worldwide. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Kstyles Worldwide. All rights reserved.</p>
         </div>
       </div>
     </footer>

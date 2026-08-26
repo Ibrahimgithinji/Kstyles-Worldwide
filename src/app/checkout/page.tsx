@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getCart, clearCart } from "@/lib/cart";
 import { formatPrice } from "@/lib/utils";
+const COUNTRIES = ["Kenya", "United States", "United Kingdom", "Canada", "Australia", "Germany", "France", "Italy", "Spain", "Netherlands", "Belgium", "Switzerland", "Austria", "Sweden", "Norway", "Denmark", "Finland", "Ireland", "Portugal", "Poland", "UAE", "Saudi Arabia", "Qatar", "Kuwait", "South Africa", "Nigeria", "Ghana", "Tanzania", "Uganda", "Rwanda", "Ethiopia", "Egypt", "Morocco", "India", "China", "Japan", "South Korea", "Singapore", "Malaysia", "Brazil", "Mexico", "Argentina", "Jamaica", "New Zealand"];
 export default function CheckoutPage() {
   const router = useRouter();
   const [items, setItems] = useState<any[]>([]);
@@ -50,7 +51,7 @@ export default function CheckoutPage() {
             <div className="grid gap-4 sm:grid-cols-3">
               <div><label className="block text-sm font-semibold text-white">City</label><input required value={form.city} onChange={e => setForm({ ...form, city: e.target.value })} className="mt-1 w-full rounded-md border border-[#2a2a2a] bg-black px-4 py-2 text-sm text-white focus:border-[#d4af37] focus:outline-none" /></div>
               <div><label className="block text-sm font-semibold text-white">ZIP</label><input required value={form.zip} onChange={e => setForm({ ...form, zip: e.target.value })} className="mt-1 w-full rounded-md border border-[#2a2a2a] bg-black px-4 py-2 text-sm text-white focus:border-[#d4af37] focus:outline-none" /></div>
-              <div><label className="block text-sm font-semibold text-white">Country</label><select value={form.country} onChange={e => setForm({ ...form, country: e.target.value })} className="mt-1 w-full rounded-md border border-[#2a2a2a] bg-black px-4 py-2 text-sm text-white focus:border-[#d4af37] focus:outline-none"><option>US</option><option>UK</option><option>CA</option></select></div>
+              <div><label className="block text-sm font-semibold text-white">Country</label><select value={form.country} onChange={e => setForm({ ...form, country: e.target.value })} className="mt-1 w-full rounded-md border border-[#2a2a2a] bg-black px-4 py-2 text-sm text-white focus:border-[#d4af37] focus:outline-none">{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
             </div>
             <button type="submit" disabled={loading} className="w-full rounded-md bg-[#d4af37] py-3 text-sm font-semibold uppercase tracking-widest text-black hover:bg-[#b8960f] transition-colors disabled:opacity-50">{loading ? "Placing order..." : "Place Order"}</button>
           </form>

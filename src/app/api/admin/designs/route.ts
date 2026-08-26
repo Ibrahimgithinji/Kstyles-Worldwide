@@ -60,7 +60,13 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   const user = getAuthUser(req);
   if (!user || user.role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const { designId, status } = await req.json().catch(() => ({}));
+  let body: any;
+  try {
+    body = await readJson(req);
+  } catch (e) {
+    return errorResponse(e);
+  }
+  const { designId, status } = body;
   if (typeof designId !== "string" || designId.length === 0) return NextResponse.json({ error: "Invalid design order id" }, { status: 400 });
   if (typeof status !== "string" || !(DESIGN_STATUSES as readonly string[]).includes(status)) {
     return NextResponse.json({ error: "Invalid status. Allowed: " + DESIGN_STATUSES.join(", ") }, { status: 400 });

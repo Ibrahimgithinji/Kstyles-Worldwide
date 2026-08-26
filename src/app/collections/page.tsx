@@ -1,11 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
 export const dynamic = "force-dynamic";
-async function getCollections() {
-  const res = await fetch(process.env.NEXT_PUBLIC_API_URL || "", { next: { revalidate: 0 } });
-  if (!res.ok) return [];
-  return res.json();
-}
 export default async function CollectionsPage() {
   let collections: { id: string; name: string; description: string; image: string; slug: string }[] = [];
   try {

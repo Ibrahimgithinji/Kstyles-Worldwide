@@ -111,6 +111,15 @@ db.exec(`
     status TEXT DEFAULT 'pending',
     createdAt TEXT DEFAULT (datetime('now'))
   );
+  CREATE TABLE IF NOT EXISTS admin_audit (
+    id TEXT PRIMARY KEY,
+    adminId TEXT NOT NULL,
+    adminEmail TEXT NOT NULL,
+    action TEXT NOT NULL,
+    target TEXT NOT NULL,
+    details TEXT DEFAULT '',
+    createdAt TEXT DEFAULT (datetime('now'))
+  );
 `);
 
 const upsert = (table, cols, row) => {

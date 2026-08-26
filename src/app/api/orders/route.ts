@@ -2,8 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import { isEmail, isStringLen } from "@/lib/validate";
 import { readJson, errorResponse } from "@/lib/body";
+import { clientIp, checkRateLimit, recordAttempt } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
+  const key = "orders:" + clientIp(req);
+  const rl = checkRateLimit(key);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many orders placed. Try again later." }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } });
+  }
+  recordAttempt(key);
   let body: any;
   try {
     body = await readJson(req);

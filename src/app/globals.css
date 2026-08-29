@@ -24,9 +24,8 @@ body {
 }
 
 @keyframes hero-zoom {
-  0% { transform: scale(1.12) translateY(-1.5%); }
-  50% { transform: scale(1.12) translateY(0); }
-  100% { transform: scale(1.12) translateY(1.5%); }
+  0% { transform: scale(1.06) translateY(2%); }
+  100% { transform: scale(1.06) translateY(-2%); }
 }
 
 .hero-media {

@@ -308,6 +308,13 @@ if (designCount === 0) {
       image: "https://images.unsplash.com/photo-1598808503746-f34c53b9323e?auto=format&fit=crop&w=900&q=80",
       category: "Suits", tags: "suit,wedding,three-piece", active: 1,
     },
+    {
+      id: "design-orange-varsity", name: "Bright Orange Crystal Varsity Sweatshirt", slug: "orange-crystal-varsity-sweatshirt",
+      description: "Statement varsity sweatshirt with vivid bright-orange crystal detailing. Heavyweight body, embroidered monogram and hand-set crystals. Made to order in your size.",
+      price: 2499, sizePrices: JSON.stringify({ S: 2299, M: 2499, L: 2699, XL: 2899 }),
+      image: "/images/designs/orange-crystal-varsity-sweatshirt.png",
+      category: "Sweatshirts", tags: "orange,crystal,varsity,statement", active: 1,
+    },
   ];
   for (const d of designs) {
     db.prepare("INSERT INTO designs (id, name, slug, description, price, sizePrices, image, category, tags, active, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))")

@@ -217,6 +217,24 @@ const products = [
     price: 2099, image: "/images/designs/jersey-3.png",
     category: "jerseys", sizes: "S,M,L,XL,XXL", colors: "Black", featured: 1,
   },
+  {
+    id: ID(10), name: "Orange Crystal Sweatshirt", slug: "orange-crystal-sweatshirt",
+    description: "Heavyweight sweatshirt embellished with bright orange crystal detailing across the chest. A bold statement piece, made to order.",
+    price: 2499, image: "https://images.unsplash.com/photo-1578681994506-b8f463449011?auto=format&fit=crop&w=900&q=80",
+    category: "sweatshirts", sizes: "S,M,L,XL,XXL", colors: "Black,Orange", featured: 1,
+  },
+  {
+    id: ID(11), name: "Crystal Statement Crewneck", slug: "crystal-statement-crewneck",
+    description: "Crewneck with hand-set orange crystals tracing the K Styles monogram. Premium fleece, standout shine.",
+    price: 2799, image: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&w=900&q=80",
+    category: "sweatshirts", sizes: "S,M,L,XL,XXL", colors: "Black", featured: 1,
+  },
+  {
+    id: ID(12), name: "Crystal Luxe Pullover", slug: "crystal-luxe-pullover",
+    description: "Luxury pullover dusted with bright orange crystals from shoulder to cuff. Made for evenings that demand attention.",
+    price: 2999, image: "https://images.unsplash.com/photo-1578768079052-aa76e52ff62e?auto=format&fit=crop&w=900&q=80",
+    category: "sweatshirts", sizes: "S,M,L,XL", colors: "Black,Orange", featured: 1,
+  },
 ];
 for (const p of products) upsert("products", Object.keys(p), p);
 

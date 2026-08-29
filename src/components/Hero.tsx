@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import fs from 'fs';
 import path from 'path';
+import HeroMedia from '@/components/HeroMedia';
 
 export default function Hero() {
   let hasVideo = false;
@@ -10,28 +11,7 @@ export default function Hero() {
 
   return (
     <section className='relative flex min-h-screen items-center justify-center overflow-hidden'>
-      <div className='absolute inset-0'>
-        {hasVideo ? (
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload='metadata'
-            aria-hidden='true'
-            className='h-full w-full object-cover object-[50%_15%]'
-          >
-            <source src='/videos/brand.mp4' type='video/mp4' />
-          </video>
-        ) : (
-          <img
-            src='/images/hero.jpg'
-            alt=''
-            aria-hidden='true'
-            className='hero-media h-full w-full object-cover object-[50%_15%]'
-          />
-        )}
-      </div>
+      <HeroMedia hasVideo={hasVideo} />
       <div className='absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black' />
       <div className='relative z-10 mx-auto max-w-4xl px-4 text-center'>
         <p className='text-xs font-semibold uppercase tracking-[0.4em] text-[#d4af37]'>Kstyles Worldwide</p>

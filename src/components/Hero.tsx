@@ -1,15 +1,12 @@
-"use client";
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import fs from 'fs';
+import path from 'path';
 
 export default function Hero() {
-  const [hasVideo, setHasVideo] = useState(false);
-
-  useEffect(() => {
-    fetch('/videos/brand.mp4', { method: 'HEAD' })
-      .then(r => { if (r.ok) setHasVideo(true); })
-      .catch(() => {});
-  }, []);
+  let hasVideo = false;
+  try {
+    hasVideo = fs.existsSync(path.join(process.cwd(), 'public', 'videos', 'brand.mp4'));
+  } catch {}
 
   return (
     <section className='relative flex min-h-screen items-center justify-center overflow-hidden'>

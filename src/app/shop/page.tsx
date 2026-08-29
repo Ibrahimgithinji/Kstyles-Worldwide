@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import ProductCard from "@/components/ProductCard";
-const cats = ["All", "Jerseys", "Outerwear", "Tops", "Bottoms"];
+const cats = ["All", "Jerseys", "Sweatshirts", "Outerwear", "Tops", "Bottoms"];
 export default function ShopPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [active, setActive] = useState("All");

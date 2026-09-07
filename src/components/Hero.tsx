@@ -19,7 +19,6 @@ export default function Hero() {
         <p className='mx-auto mt-6 max-w-2xl text-lg text-[#a0a0a0] sm:text-xl'>Luxury streetwear for the modern icon.</p>
         <div className='mt-10 flex items-center justify-center gap-4'>
           <Link href='/shop' className='rounded-md bg-[#d4af37] px-8 py-3 text-sm font-semibold uppercase tracking-widest text-black transition-colors hover:bg-[#b8960f]'>Shop Collection</Link>
-          <Link href='/collections' className='rounded-md border border-[#2a2a2a] px-8 py-3 text-sm font-semibold uppercase tracking-widest text-white transition-colors hover:border-[#d4af37]'>Explore</Link>
         </div>
       </div>
     </section>

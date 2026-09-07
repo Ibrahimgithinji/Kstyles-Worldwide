@@ -87,7 +87,7 @@ export default function AdminProductsPage() {
                   <>
                     <span className="text-2xl text-[#d4af37]">+</span>
                     <p className="text-xs text-[#a0a0a0]">Drag &amp; drop image or click to browse</p>
-                    <p className="text-[10px] text-[#555]">PNG, JPG, WebP — up to 5MB</p>
+                    <p className="text-xs text-[#555]">PNG, JPG, WebP — up to 5MB</p>
                   </>
                 )}
               </div>

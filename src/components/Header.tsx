@@ -90,14 +90,14 @@ export default function Header() {
           </span>
           <span className="flex flex-col leading-none">
             <span className="text-lg font-bold tracking-[0.22em] text-white">KSTYLES</span>
-            <span className="mt-0.5 text-[9px] uppercase tracking-[0.4em] text-[#d4af37]">Worldwide</span>
+            <span className="mt-0.5 text-xs uppercase tracking-[0.4em] text-[#d4af37]">Worldwide</span>
           </span>
         </Link>
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-9 md:flex">
           {links.map(l => (
-            <Link key={l.href} href={l.href} className={`group relative text-[13px] font-medium uppercase tracking-[0.18em] transition-colors duration-200 ${isActive(l.href) ? "text-[#d4af37]" : "text-[#c9c9c9] hover:text-white"}`}>
+            <Link key={l.href} href={l.href} className={`group relative text-sm font-medium uppercase tracking-[0.18em] transition-colors duration-200 ${isActive(l.href) ? "text-[#d4af37]" : "text-[#c9c9c9] hover:text-white"}`}>
               {l.label}
               <span className={`absolute -bottom-2 left-0 h-[2px] rounded-full bg-gradient-to-r from-[#d4af37] to-[#f0d060] transition-all duration-300 ${isActive(l.href) ? "w-full" : "w-0 group-hover:w-full"}`} />
             </Link>
@@ -110,7 +110,7 @@ export default function Header() {
           <Link href="/cart" className="group relative flex h-10 w-10 items-center justify-center rounded-full border border-[#2a2a2a] bg-[#111] text-[#c9c9c9] transition-all hover:border-[#d4af37] hover:text-[#d4af37]" aria-label="Cart">
             <CartIcon />
             {count > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#d4af37] px-1 text-[10px] font-bold text-black shadow-[0_0_10px_rgba(212,175,55,0.6)]">{count}</span>
+              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#d4af37] px-1 text-xs font-bold text-black shadow-[0_0_10px_rgba(212,175,55,0.6)]">{count}</span>
             )}
           </Link>
 
@@ -146,7 +146,7 @@ export default function Header() {
               )}
             </div>
           ) : (
-            <Link href="/auth/login" className="group relative hidden overflow-hidden rounded-full bg-[#d4af37] px-6 py-2.5 text-[13px] font-semibold uppercase tracking-widest text-black transition-all hover:bg-[#f0d060] hover:shadow-[0_0_24px_rgba(212,175,55,0.45)] sm:block">
+            <Link href="/auth/login" className="group relative hidden overflow-hidden rounded-full bg-[#d4af37] px-6 py-2.5 text-sm font-semibold uppercase tracking-widest text-black transition-all hover:bg-[#f0d060] hover:shadow-[0_0_24px_rgba(212,175,55,0.45)] sm:block">
               Sign In
             </Link>
           )}

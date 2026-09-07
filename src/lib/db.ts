@@ -54,13 +54,6 @@ db.exec(`
     image TEXT DEFAULT ''
   );
 
-  CREATE TABLE IF NOT EXISTS collections (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    description TEXT NOT NULL,
-    image TEXT DEFAULT '',
-    slug TEXT UNIQUE NOT NULL
-  );
   CREATE TABLE IF NOT EXISTS blog_posts (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,

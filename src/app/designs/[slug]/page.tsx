@@ -87,7 +87,7 @@ export default function DesignDetailPage() {
                 {sizes.map(s => (
                   <button key={s} type="button" onClick={() => setSize(s)} className={`min-w-12 rounded-md border px-4 py-2.5 text-sm font-medium transition-all ${size === s ? "border-[#d4af37] bg-[#d4af37] text-black" : "border-[#2a2a2a] bg-[#111] text-[#c9c9c9] hover:border-[#d4af37]/50"}`}>
                     {s}
-                    {current.sizePrices?.[s] && <span className="ml-1 text-[10px] opacity-70">{formatPrice(current.sizePrices[s])}</span>}
+                    {current.sizePrices?.[s] && <span className="ml-1 text-xs opacity-70">{formatPrice(current.sizePrices[s])}</span>}
                   </button>
                 ))}
               </div>
@@ -129,7 +129,7 @@ export default function DesignDetailPage() {
                 <div><label className="block text-xs font-semibold text-[#a0a0a0]">Custom Measurements (optional)</label><input value={form.dimensions} onChange={e => setForm({ ...form, dimensions: e.target.value })} placeholder="e.g. Chest 40'' Waist 32'' Length 28''" className="mt-1 w-full rounded-md border border-[#2a2a2a] bg-black px-4 py-2 text-sm text-white focus:border-[#d4af37] focus:outline-none" /></div>
                 <div><label className="block text-xs font-semibold text-[#a0a0a0]">Notes for the Tailor</label><textarea rows={3} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} className="mt-1 w-full rounded-md border border-[#2a2a2a] bg-black px-4 py-2 text-sm text-white focus:border-[#d4af37] focus:outline-none" /></div>
                 <button type="submit" className="w-full rounded-md bg-[#d4af37] py-3 text-sm font-semibold uppercase tracking-widest text-black hover:bg-[#b8960f] transition-colors">Request {current.name} — {formatPrice(unitPrice)}</button>
-                <p className="text-center text-[10px] text-[#555]">No payment taken now. We confirm price and details by email first.</p>
+                <p className="text-center text-xs text-[#555]">No payment taken now. We confirm price and details by email first.</p>
               </form>
             )}
           </div>

@@ -63,13 +63,6 @@ db.exec(`
     email TEXT UNIQUE NOT NULL,
     createdAt TEXT DEFAULT (datetime('now'))
   );
-  CREATE TABLE IF NOT EXISTS collections (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    description TEXT NOT NULL,
-    image TEXT DEFAULT '',
-    slug TEXT UNIQUE NOT NULL
-  );
   CREATE TABLE IF NOT EXISTS blog_posts (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
@@ -238,14 +231,6 @@ const products = [
 ];
 for (const p of products) upsert("products", Object.keys(p), p);
 
-// Collections
-const collections = [
-  { id: ID(1), name: "Fall/Winter 2025", description: "Embrace the cold with our latest drop. Heavy fabrics, dark tones, and bold silhouettes.", image: "https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=900&q=80", slug: "fall-winter-2025" },
-  { id: ID(2), name: "Gold Label", description: "Our premium line featuring exclusive pieces with gold detailing and limited runs.", image: "https://images.unsplash.com/photo-1490114538077-0a7f8cb49891?auto=format&fit=crop&w=900&q=80", slug: "gold-label" },
-  { id: ID(3), name: "Essentials", description: "Wardrobe staples reimagined. Elevated basics for everyday luxury.", image: "https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=900&q=80", slug: "essentials" },
-];
-for (const c of collections) upsert("collections", Object.keys(c), c);
-
 // Blog posts
 const blogPosts = [
   { id: ID(1), title: "The Art of Layering: Winter Style Guide", slug: "art-of-layering-winter-style-guide", excerpt: "Master the art of layering with Kstyles' top picks for the cold season.", content: "Layering is not just about staying warm—it's about making a statement. Start with a lightweight base like our Graphic Tee, add a mid-layer such as the Signature Hoodie, and top it off with the Oversized Denim Jacket or Leather Bomber. The key is mixing textures and proportions while keeping a cohesive color palette.", image: "https://images.unsplash.com/photo-1520975954732-35dd22299614?auto=format&fit=crop&w=900&q=80", author: "Kstyles Team", date: "2025-12-20", tags: "style-guide,winter,layering" },
@@ -328,7 +313,6 @@ if (designCount === 0) {
 console.log("Seed complete!");
 console.log("  users:", db.prepare("SELECT COUNT(*) c FROM users").get().c);
 console.log("  products:", db.prepare("SELECT COUNT(*) c FROM products").get().c);
-console.log("  collections:", db.prepare("SELECT COUNT(*) c FROM collections").get().c);
-console.log("  blog_posts:", db.prepare("SELECT COUNT(*) c FROM blog_posts").get().c);
+  console.log("  blog_posts:", db.prepare("SELECT COUNT(*) c FROM blog_posts").get().c);
 console.log("  designs:", db.prepare("SELECT COUNT(*) c FROM designs").get().c);
 console.log("Admin login email:", adminEmail);

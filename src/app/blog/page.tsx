@@ -18,7 +18,7 @@ export default async function BlogPage() {
               <p className="text-xs uppercase tracking-widest text-[#a0a0a0]">{p.date} &middot; {p.author}</p>
               <h2 className="mt-2 text-2xl font-bold text-white">{p.title}</h2>
               <p className="mt-2 text-sm text-[#a0a0a0]">{p.excerpt}</p>
-              <div className="mt-4 flex gap-2">
+              <div className="mt-4 flex flex-wrap gap-2">
                 {p.tags.map(t => <span key={t} className="rounded-full border border-[#2a2a2a] px-3 py-1 text-xs text-[#a0a0a0]">{t}</span>)}
               </div>
             </Link>

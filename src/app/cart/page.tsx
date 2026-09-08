@@ -31,9 +31,9 @@ export default function CartPage() {
                   <p className="mt-1 text-xs text-[#a0a0a0]">{item.size} / {item.color}</p>
                   <p className="mt-1 text-sm text-[#d4af37]">{formatPrice(item.price)}</p>
                   <div className="mt-2 flex items-center gap-2">
-                    <button onClick={() => { updateQuantity(item.productId, item.size, item.color, item.quantity - 1); setItems(getCart()); }} className="h-8 w-8 rounded border border-[#2a2a2a] text-white">-</button>
+                    <button onClick={() => { updateQuantity(item.productId, item.size, item.color, item.quantity - 1); setItems(getCart()); }} className="h-10 w-10 rounded border border-[#2a2a2a] text-white">-</button>
                     <span className="w-8 text-center text-sm text-white">{item.quantity}</span>
-                    <button onClick={() => { updateQuantity(item.productId, item.size, item.color, item.quantity + 1); setItems(getCart()); }} className="h-8 w-8 rounded border border-[#2a2a2a] text-white">+</button>
+                    <button onClick={() => { updateQuantity(item.productId, item.size, item.color, item.quantity + 1); setItems(getCart()); }} className="h-10 w-10 rounded border border-[#2a2a2a] text-white">+</button>
                     <button onClick={() => { removeFromCart(item.productId, item.size, item.color); setItems(getCart()); }} className="ml-4 text-xs uppercase tracking-widest text-[#a0a0a0] hover:text-red-500">Remove</button>
                   </div>
                 </div>

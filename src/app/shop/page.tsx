@@ -15,7 +15,7 @@ export default function ShopPage() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <h1 className="text-4xl font-bold text-white">Shop All</h1>
         <p className="mt-2 text-[#a0a0a0]">{filtered.length} product{filtered.length !== 1 ? "s" : ""}</p>
-        <div className="mt-8 flex gap-2">
+        <div className="mt-8 flex flex-wrap gap-2">
           {cats.map(c => (
             <button key={c} onClick={() => setActive(c)} className={`rounded-md px-4 py-2 text-sm uppercase tracking-widest transition-colors ${active === c ? "bg-[#d4af37] text-black" : "border border-[#2a2a2a] text-[#a0a0a0] hover:text-white"}`}>{c}</button>
           ))}

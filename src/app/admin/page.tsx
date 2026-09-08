@@ -49,16 +49,18 @@ export default function AdminDashboard() {
           </div>
           <h2 className="mt-12 text-lg font-semibold text-white">Recent Orders</h2>
           {orders.length === 0 ? <p className="mt-4 text-[#a0a0a0]">No orders yet.</p> : (
-            <table className="mt-4 w-full text-left text-sm">
-              <thead className="border-b border-[#2a2a2a] text-[#a0a0a0]">
-                <tr><th className="pb-3 pr-4 font-medium">Order</th><th className="pb-3 pr-4 font-medium">Customer</th><th className="pb-3 pr-4 font-medium">Status</th><th className="pb-3 font-medium">Total</th></tr>
-              </thead>
-              <tbody className="text-white">
-                {orders.slice(0, 5).map(o => (
-                  <tr key={o.id} className="border-b border-[#2a2a2a]"><td className="py-3 pr-4">{o.id.slice(0, 8)}</td><td className="py-3 pr-4">{o.firstName} {o.lastName}</td><td className="py-3 pr-4 text-[#d4af37]">{o.status}</td><td className="py-3">{formatPrice(o.total)}</td></tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full min-w-[560px] text-left text-sm">
+                <thead className="border-b border-[#2a2a2a] text-[#a0a0a0]">
+                  <tr><th className="pb-3 pr-4 font-medium">Order</th><th className="pb-3 pr-4 font-medium">Customer</th><th className="pb-3 pr-4 font-medium">Status</th><th className="pb-3 font-medium">Total</th></tr>
+                </thead>
+                <tbody className="text-white">
+                  {orders.slice(0, 5).map(o => (
+                    <tr key={o.id} className="border-b border-[#2a2a2a]"><td className="py-3 pr-4">{o.id.slice(0, 8)}</td><td className="py-3 pr-4">{o.firstName} {o.lastName}</td><td className="py-3 pr-4 text-[#d4af37]">{o.status}</td><td className="py-3">{formatPrice(o.total)}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </>
       )}

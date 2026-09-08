@@ -24,7 +24,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         <div className="mt-8">
           <p className="text-xs uppercase tracking-widest text-[#a0a0a0]">{post.date} &middot; {post.author}</p>
           <h1 className="mt-2 text-3xl font-bold text-white">{post.title}</h1>
-          <div className="mt-2 flex gap-2">
+          <div className="mt-2 flex flex-wrap gap-2">
             {post.tags.map(t => <span key={t} className="rounded-full border border-[#2a2a2a] px-3 py-1 text-xs text-[#a0a0a0]">{t}</span>)}
           </div>
           <p className="mt-8 text-[#a0a0a0] leading-relaxed">{post.content}</p>

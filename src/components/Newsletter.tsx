@@ -18,9 +18,9 @@ export default function Newsletter() {
         <p className="mt-2 text-[#a0a0a0]">Be the first to know about drops, restocks, and exclusive offers.</p>
         {status === "success" && <p className="mt-4 text-sm text-green-400">Subscribed! Welcome to the Kstyles community.</p>}
         {status === "error" && <p className="mt-4 text-sm text-red-400">Something went wrong. Try again.</p>}
-        <form onSubmit={handleSubmit} className="mt-8 flex gap-4">
+        <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-4 sm:flex-row">
           <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Enter your email" className="flex-1 rounded-md border border-[#2a2a2a] bg-black px-4 py-3 text-sm text-white placeholder-[#a0a0a0] focus:border-[#d4af37] focus:outline-none" required />
-          <button type="submit" disabled={status === "loading"} className="rounded-md bg-[#d4af37] px-6 py-3 text-sm font-semibold uppercase tracking-widest text-black hover:bg-[#b8960f] transition-colors disabled:opacity-50">{status === "loading" ? "..." : "Subscribe"}</button>
+          <button type="submit" disabled={status === "loading"} className="rounded-md bg-[#d4af37] px-6 py-3 text-sm font-semibold uppercase tracking-widest text-black hover:bg-[#b8960f] transition-colors disabled:opacity-50 sm:w-auto w-full">{status === "loading" ? "..." : "Subscribe"}</button>
         </form>
       </div>
     </section>

@@ -40,16 +40,18 @@ export default function AdminOrders() {
       <h1 className="text-2xl font-bold text-white">Orders</h1>
       <p className="mt-1 text-sm text-[#a0a0a0]">Each order lists the exact items and photos for dispatch.</p>
       {loading ? <p className="mt-8 text-[#a0a0a0]">Loading...</p> : orders.length === 0 ? <p className="mt-8 text-[#a0a0a0]">No orders yet.</p> : (
-        <table className="mt-8 w-full text-left text-sm">
-          <thead className="border-b border-[#2a2a2a] text-[#a0a0a0]">
-            <tr><th className="pb-3 pr-4 font-medium">Order ID</th><th className="pb-3 pr-4 font-medium">Customer</th><th className="pb-3 pr-4 font-medium">Status</th><th className="pb-3 pr-4 font-medium">Total</th><th className="pb-3 font-medium">Date</th></tr>
-          </thead>
-          <tbody className="text-white">
-            {orders.map(o => (
-              <OrderRow key={o.id} order={o} onStatus={s => updateStatus(o.id, s)} />
-            ))}
-          </tbody>
-        </table>
+        <div className="mt-8 overflow-x-auto">
+          <table className="w-full min-w-[720px] text-left text-sm">
+            <thead className="border-b border-[#2a2a2a] text-[#a0a0a0]">
+              <tr><th className="pb-3 pr-4 font-medium">Order ID</th><th className="pb-3 pr-4 font-medium">Customer</th><th className="pb-3 pr-4 font-medium">Status</th><th className="pb-3 pr-4 font-medium">Total</th><th className="pb-3 font-medium">Date</th></tr>
+            </thead>
+            <tbody className="text-white">
+              {orders.map(o => (
+                <OrderRow key={o.id} order={o} onStatus={s => updateStatus(o.id, s)} />
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

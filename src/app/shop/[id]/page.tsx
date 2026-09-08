@@ -30,13 +30,13 @@ export default function ProductDetail() {
             <p className="mt-6 text-[#a0a0a0] leading-relaxed">{p.description}</p>
             <div className="mt-8">
               <p className="text-sm font-semibold uppercase tracking-widest text-white">Size: {size}</p>
-              <div className="mt-3 flex gap-2">
+              <div className="mt-3 flex flex-wrap gap-2">
                 {sizes.map(s => <button key={s} onClick={() => setSize(s)} className={`rounded-md border px-4 py-2 text-sm transition-colors ${size === s ? "border-[#d4af37] bg-[#d4af37] text-black" : "border-[#2a2a2a] text-white hover:border-[#d4af37]"}`}>{s}</button>)}
               </div>
             </div>
             <div className="mt-8">
               <p className="text-sm font-semibold uppercase tracking-widest text-white">Color: {color}</p>
-              <div className="mt-3 flex gap-2">
+              <div className="mt-3 flex flex-wrap gap-2">
                 {colors.map(c => <button key={c} onClick={() => setColor(c)} className={`h-8 w-8 rounded-full border transition-all ${color === c ? "ring-2 ring-[#d4af37] ring-offset-2 ring-offset-black" : "border-[#2a2a2a]"}`} title={c} style={{ backgroundColor: colorMap[c] || "#d4af37" }} />)}
               </div>
             </div>

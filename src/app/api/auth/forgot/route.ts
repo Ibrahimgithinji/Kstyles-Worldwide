@@ -43,12 +43,16 @@ export async function POST(req: NextRequest) {
   if (user) {
     const token = signResetToken(user.id);
     const link = appUrl(`/auth/reset?token=${token}`);
-    await sendEmail({
-      to: lower,
-      subject: "Kstyles Worldwide — Reset your password",
-      text: `Hi ${user.name},\n\nWe received a request to reset your Kstyles password. Open the link below to choose a new one. It expires in 30 minutes.\n\n${link}\n\nIf you didn't request this, you can safely ignore this email.\n\n— Kstyles Worldwide`,
-      html: `<p>Hi ${user.name},</p><p>We received a request to reset your Kstyles password. <a href="${link}">Click here to choose a new one</a>. It expires in 30 minutes.</p><p>If you didn't request this, you can safely ignore this email.</p>`,
-    });
+    try {
+      await sendEmail({
+        to: lower,
+        subject: "Kstyles Worldwide — Reset your password",
+        text: `Hi ${user.name},\n\nWe received a request to reset your Kstyles password. Open the link below to choose a new one. It expires in 30 minutes.\n\n${link}\n\nIf you didn't request this, you can safely ignore this email.\n\n— Kstyles Worldwide`,
+        html: `<p>Hi ${user.name},</p><p>We received a request to reset your Kstyles password. <a href="${link}">Click here to choose a new one</a>. It expires in 30 minutes.</p><p>If you didn't request this, you can safely ignore this email.</p>`,
+      });
+    } catch (e) {
+      console.error("[password-reset] Email not sent:", e instanceof Error ? e.message : e);
+    }
   }
 
   return NextResponse.json({ message: "If an account exists for that email, a reset link is on its way." });

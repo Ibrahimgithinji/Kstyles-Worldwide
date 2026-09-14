@@ -4,9 +4,20 @@ import { signResetToken } from "@/lib/auth";
 import { clientIp, checkRateLimit, recordAttempt } from "@/lib/rate-limit";
 import { isEmail } from "@/lib/validate";
 import { readJson, errorResponse } from "@/lib/body";
-import { appUrl, sendEmail } from "@/lib/email";
+import { appUrl, assertEmailConfigured, EmailConfigurationError, sendEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
+  // Check this before the account lookup to avoid both reset-token logging and
+  // account enumeration while production email delivery is unavailable.
+  try {
+    assertEmailConfigured();
+  } catch (error) {
+    if (error instanceof EmailConfigurationError) {
+      return NextResponse.json({ error: "Password reset is temporarily unavailable. Please try again later." }, { status: 503 });
+    }
+    throw error;
+  }
+
   const ip = clientIp(req);
   const ipLimit = checkRateLimit(`forgot:${ip}`);
   if (!ipLimit.allowed) {
@@ -50,8 +61,10 @@ export async function POST(req: NextRequest) {
         text: `Hi ${user.name},\n\nWe received a request to reset your Kstyles password. Open the link below to choose a new one. It expires in 30 minutes.\n\n${link}\n\nIf you didn't request this, you can safely ignore this email.\n\n— Kstyles Worldwide`,
         html: `<p>Hi ${user.name},</p><p>We received a request to reset your Kstyles password. <a href="${link}">Click here to choose a new one</a>. It expires in 30 minutes.</p><p>If you didn't request this, you can safely ignore this email.</p>`,
       });
-    } catch (e) {
-      console.error("[password-reset] Email not sent:", e instanceof Error ? e.message : e);
+    } catch {
+      // Do not write the reset link or provider response to logs. Keep the
+      // public response generic so delivery failures do not reveal accounts.
+      console.error("[password-reset] Email delivery failed.");
     }
   }
 

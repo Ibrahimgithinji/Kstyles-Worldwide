@@ -1,8 +1,61 @@
-const APP_URL = process.env.APP_URL || "http://localhost:3000";
-const EMAIL_MODE = process.env.EMAIL_MODE || "log";
+type EmailMode = "log" | "resend" | "smtp";
+
+const isProduction = process.env.NODE_ENV === "production";
+
+export class EmailConfigurationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "EmailConfigurationError";
+  }
+}
+
+function getEmailMode(): EmailMode {
+  const mode = process.env.EMAIL_MODE || (isProduction ? "" : "log");
+  if (mode !== "log" && mode !== "resend" && mode !== "smtp") {
+    throw new EmailConfigurationError("EMAIL_MODE must be set to resend or smtp in production.");
+  }
+  if (isProduction && mode === "log") {
+    throw new EmailConfigurationError("EMAIL_MODE=log is not permitted in production.");
+  }
+  return mode;
+}
+
+function getAppUrl(): URL {
+  const raw = process.env.APP_URL || (isProduction ? "" : "http://localhost:3000");
+  if (!raw) throw new EmailConfigurationError("APP_URL must be set in production.");
+
+  try {
+    const url = new URL(raw);
+    if (url.username || url.password || (isProduction && url.protocol !== "https:")) {
+      throw new Error("unsafe URL");
+    }
+    return url;
+  } catch {
+    throw new EmailConfigurationError("APP_URL must be a valid public URL.");
+  }
+}
 
 export function appUrl(path: string): string {
-  return `${APP_URL}${path}`;
+  if (!path.startsWith("/")) throw new EmailConfigurationError("Email links must use an absolute path.");
+  return new URL(path, getAppUrl()).toString();
+}
+
+/**
+ * Checks configuration before looking up an account so an unavailable mail
+ * service cannot reveal whether a submitted email address belongs to a user.
+ */
+export function assertEmailConfigured(): void {
+  const mode = getEmailMode();
+  getAppUrl();
+  if (mode === "resend" && !process.env.RESEND_API_KEY) {
+    throw new EmailConfigurationError("RESEND_API_KEY is required when EMAIL_MODE=resend.");
+  }
+  if (mode === "smtp" && !process.env.SMTP_HOST) {
+    throw new EmailConfigurationError("SMTP_HOST is required when EMAIL_MODE=smtp.");
+  }
+  if (isProduction && !process.env.EMAIL_FROM) {
+    throw new EmailConfigurationError("EMAIL_FROM must be set in production.");
+  }
 }
 
 async function sendViaResend(opts: { to: string; subject: string; text: string; html?: string }): Promise<void> {
@@ -50,11 +103,13 @@ async function sendViaSmtp(opts: { to: string; subject: string; text: string; ht
 }
 
 export async function sendEmail(opts: { to: string; subject: string; text: string; html?: string }): Promise<void> {
-  if (EMAIL_MODE === "log") {
-    console.log(`\n[email:${EMAIL_MODE}] To: ${opts.to}\nSubject: ${opts.subject}\n${opts.text}\n`);
+  assertEmailConfigured();
+  const mode = getEmailMode();
+  if (mode === "log") {
+    // Local-development convenience only. Production explicitly rejects this mode.
+    console.log(`\n[email:${mode}] To: ${opts.to}\nSubject: ${opts.subject}\n${opts.text}\n`);
     return;
   }
-  if (EMAIL_MODE === "resend") return sendViaResend(opts);
-  if (EMAIL_MODE === "smtp") return sendViaSmtp(opts);
-  throw new Error(`FATAL: Unknown EMAIL_MODE "${EMAIL_MODE}". Use "log" (default), "resend", or "smtp".`);
+  if (mode === "resend") return sendViaResend(opts);
+  return sendViaSmtp(opts);
 }

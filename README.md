@@ -38,6 +38,14 @@ admin account if that value is missing or shorter than 12 characters.
 
 > Note: `prisma/dev.db` is gitignored, so a fresh clone requires re-seeding.
 
+### Password-reset email setup
+
+Local development uses `EMAIL_MODE=log` by default, so reset emails are shown
+only in the local terminal. Before deploying, configure `APP_URL` with the
+public HTTPS address, then configure either Resend or SMTP and set
+`EMAIL_FROM`. Production refuses to use log mode, so reset links are never
+written to production logs. See `.env.example` for the required variables.
+
 ## Features
 
 - Storefront: landing with hero + featured products, shop with categories, product detail (sizes/colors), cart (localStorage), checkout with real orders

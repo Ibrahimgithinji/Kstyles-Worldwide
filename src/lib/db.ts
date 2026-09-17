@@ -80,21 +80,6 @@ db.exec(`
   );
 `);
 
-// Migration: add columns to existing tables
-const cols = db.prepare("PRAGMA table_info(order_items)").all() as { name: string }[];
-const has = (n: string) => cols.some(c => c.name === n);
-if (!has("name")) db.exec("ALTER TABLE order_items ADD COLUMN name TEXT DEFAULT ''");
-if (!has("image")) db.exec("ALTER TABLE order_items ADD COLUMN image TEXT DEFAULT ''");
-const doCols = db.prepare("PRAGMA table_info(design_orders)").all() as { name: string }[];
-const doHas = (n: string) => doCols.some(c => c.name === n);
-if (!doHas("phone")) db.exec("ALTER TABLE design_orders ADD COLUMN phone TEXT DEFAULT ''");
-const userCols = db.prepare("PRAGMA table_info(users)").all() as { name: string }[];
-const userHas = (n: string) => userCols.some(c => c.name === n);
-if (!userHas("password_changed_at")) db.exec("ALTER TABLE users ADD COLUMN password_changed_at INTEGER NOT NULL DEFAULT 0");
-const designCols = db.prepare("PRAGMA table_info(designs)").all() as { name: string }[];
-const designHas = (n: string) => designCols.some(c => c.name === n);
-if (!designHas("category")) db.exec("ALTER TABLE designs ADD COLUMN category TEXT DEFAULT ''");
-
 // Admin audit trail
 db.exec(`
   CREATE TABLE IF NOT EXISTS admin_audit (
@@ -141,6 +126,21 @@ db.exec(`
     createdAt TEXT DEFAULT (datetime('now'))
   );
 `);
+
+// Migration: add columns to existing tables
+const cols = db.prepare("PRAGMA table_info(order_items)").all() as { name: string }[];
+const has = (n: string) => cols.some(c => c.name === n);
+if (!has("name")) db.exec("ALTER TABLE order_items ADD COLUMN name TEXT DEFAULT ''");
+if (!has("image")) db.exec("ALTER TABLE order_items ADD COLUMN image TEXT DEFAULT ''");
+const doCols = db.prepare("PRAGMA table_info(design_orders)").all() as { name: string }[];
+const doHas = (n: string) => doCols.some(c => c.name === n);
+if (!doHas("phone")) db.exec("ALTER TABLE design_orders ADD COLUMN phone TEXT DEFAULT ''");
+const userCols = db.prepare("PRAGMA table_info(users)").all() as { name: string }[];
+const userHas = (n: string) => userCols.some(c => c.name === n);
+if (!userHas("password_changed_at")) db.exec("ALTER TABLE users ADD COLUMN password_changed_at INTEGER NOT NULL DEFAULT 0");
+const designCols = db.prepare("PRAGMA table_info(designs)").all() as { name: string }[];
+const designHas = (n: string) => designCols.some(c => c.name === n);
+if (!designHas("category")) db.exec("ALTER TABLE designs ADD COLUMN category TEXT DEFAULT ''");
 
 export function logAdminAction(adminId: string, adminEmail: string, action: string, target: string, details = "") {
   db.prepare("INSERT INTO admin_audit (id, adminId, adminEmail, action, target, details) VALUES (?, ?, ?, ?, ?, ?)")

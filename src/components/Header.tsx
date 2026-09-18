@@ -117,7 +117,7 @@ export default function Header() {
           {/* Account */}
           {user ? (
             <div className="relative">
-              <button onClick={() => setUserMenu(!userMenu)} className="flex items-center gap-2 rounded-full border border-[#2a2a2a] bg-[#111] py-1 pl-1 pr-3 transition-all hover:border-[#d4af37]" aria-label="Account">
+              <button onClick={() => setUserMenu(!userMenu)} className="flex h-12 items-center gap-2 rounded-full border border-[#2a2a2a] bg-[#111] pl-1 pr-3 transition-all hover:border-[#d4af37]" aria-label={`${initials} Profile`}>
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a] text-xs font-bold text-[#d4af37]">{initials}</span>
                 <span className="hidden text-xs font-medium text-white sm:block">{user.name.split(" ")[0]}</span>
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={`text-[#a0a0a0] transition-transform ${userMenu ? "rotate-180" : ""}`}><path d="m6 9 6 6 6-6" /></svg>

@@ -21,7 +21,7 @@ const CSP = [
   "form-action 'self'",
 ].join("; ");
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const res = NextResponse.next();
   res.headers.set("Content-Security-Policy", CSP);
   res.headers.set("X-Content-Type-Options", "nosniff");

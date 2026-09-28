@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
 
 const isDev = process.env.NODE_ENV !== "production";
 
@@ -21,7 +20,7 @@ const CSP = [
   "form-action 'self'",
 ].join("; ");
 
-export function proxy(req: NextRequest) {
+export function proxy() {
   const res = NextResponse.next();
   res.headers.set("Content-Security-Policy", CSP);
   res.headers.set("X-Content-Type-Options", "nosniff");
@@ -35,5 +34,5 @@ export function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/images|api/upload).*)"],
+  matcher: ["/((?!_next/static(?:/|$)|_next/image(?:/|$)|favicon\\.ico$|api/images(?:/|$)|api/upload(?:/|$)).*)"],
 };

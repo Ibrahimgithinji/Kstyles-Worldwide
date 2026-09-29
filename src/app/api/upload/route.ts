@@ -5,6 +5,7 @@ import { getAuthUser } from "@/lib/auth";
 
 const ALLOWED = /^image\/(png|jpe?g|webp|gif|avif)$/i;
 const MAX_SIZE = 5 * 1024 * 1024;
+const MAX_REQUEST_SIZE = MAX_SIZE + 64 * 1024;
 
 function sniffImage(buffer: Buffer): "png" | "jpeg" | "gif" | "webp" | "avif" | null {
   if (buffer.length >= 8 && buffer.readUInt32BE(0) === 0x89504e47 && buffer.readUInt32BE(4) === 0x0d0a1a0a) return "png";
@@ -23,6 +24,11 @@ const extForType: Record<string, string> = { png: "png", jpeg: "jpg", gif: "gif"
 export async function POST(req: NextRequest) {
   const user = getAuthUser(req);
   if (!user || user.role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const contentLength = Number(req.headers.get("content-length"));
+  if (Number.isFinite(contentLength) && contentLength > MAX_REQUEST_SIZE) {
+    return NextResponse.json({ error: "Upload request exceeds size limit" }, { status: 413 });
+  }
 
   const file = (await req.formData()).get("file");
   if (!(file instanceof File)) return NextResponse.json({ error: "No file provided" }, { status: 400 });

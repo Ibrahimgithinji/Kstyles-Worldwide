@@ -33,13 +33,16 @@ export async function POST(req: NextRequest) {
   let total = 0;
   const rows: any[] = [];
   for (const raw of items) {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw) || typeof raw.productId !== "string" || raw.productId.length === 0 || raw.productId.length > 120) {
+      return NextResponse.json({ error: "Invalid order item" }, { status: 400 });
+    }
     const quantity = Number(raw.quantity);
     if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99) {
       return NextResponse.json({ error: "Invalid quantity for item " + raw.productId }, { status: 400 });
     }
-    const product = lookups.get(String(raw.productId)) as any;
+    const product = lookups.get(raw.productId) as any;
     if (!product) {
-      return NextResponse.json({ error: "Product not found: " + raw.productId }, { status: 400 });
+      return NextResponse.json({ error: "Product not found" }, { status: 400 });
     }
     const size = typeof raw.size === "string" ? raw.size.slice(0, 20) : "";
     const color = typeof raw.color === "string" ? raw.color.slice(0, 40) : "";
@@ -49,11 +52,13 @@ export async function POST(req: NextRequest) {
   }
 
   const id = crypto.randomUUID();
-  db.prepare("INSERT INTO orders (id, email, firstName, lastName, address, city, zip, country, total, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')")
-    .run(id, String(email).slice(0, 254), String(firstName).slice(0, 80), String(lastName).slice(0, 80), String(address).slice(0, 200), String(city).slice(0, 80), String(zip).slice(0, 20), String(country).slice(0, 80), total);
-  for (const row of rows) {
-    row[1] = id;
-    insert.run(...row);
-  }
+  db.transaction(() => {
+    db.prepare("INSERT INTO orders (id, email, firstName, lastName, address, city, zip, country, total, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')")
+      .run(id, String(email).slice(0, 254), String(firstName).slice(0, 80), String(lastName).slice(0, 80), String(address).slice(0, 200), String(city).slice(0, 80), String(zip).slice(0, 20), String(country).slice(0, 80), total);
+    for (const row of rows) {
+      row[1] = id;
+      insert.run(...row);
+    }
+  })();
   return NextResponse.json({ id, total });
 }

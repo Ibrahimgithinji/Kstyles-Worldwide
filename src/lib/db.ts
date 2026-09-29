@@ -13,7 +13,9 @@ db.exec(`
     email TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
     role TEXT DEFAULT 'customer',
-    createdAt TEXT DEFAULT (datetime('now'))
+    createdAt TEXT DEFAULT (datetime('now')),
+    reset_token_hash TEXT,
+    reset_token_expires_at INTEGER
   );
   CREATE TABLE IF NOT EXISTS products (
     id TEXT PRIMARY KEY,
@@ -138,6 +140,8 @@ if (!doHas("phone")) db.exec("ALTER TABLE design_orders ADD COLUMN phone TEXT DE
 const userCols = db.prepare("PRAGMA table_info(users)").all() as { name: string }[];
 const userHas = (n: string) => userCols.some(c => c.name === n);
 if (!userHas("password_changed_at")) db.exec("ALTER TABLE users ADD COLUMN password_changed_at INTEGER NOT NULL DEFAULT 0");
+if (!userHas("reset_token_hash")) db.exec("ALTER TABLE users ADD COLUMN reset_token_hash TEXT");
+if (!userHas("reset_token_expires_at")) db.exec("ALTER TABLE users ADD COLUMN reset_token_expires_at INTEGER");
 const designCols = db.prepare("PRAGMA table_info(designs)").all() as { name: string }[];
 const designHas = (n: string) => designCols.some(c => c.name === n);
 if (!designHas("category")) db.exec("ALTER TABLE designs ADD COLUMN category TEXT DEFAULT ''");

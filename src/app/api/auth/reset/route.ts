@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
+import { createHash } from "node:crypto";
 import db from "@/lib/db";
 import { verifyResetToken } from "@/lib/auth";
+import { hashPassword } from "@/lib/password";
 import { clientIp, checkRateLimit, recordAttempt } from "@/lib/rate-limit";
 import { isPassword } from "@/lib/validate";
 import { readJson, errorResponse } from "@/lib/body";
@@ -33,15 +34,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid or expired reset link" }, { status: 400 });
   }
 
-  const user = db.prepare("SELECT id FROM users WHERE id = ?").get(userId) as { id: string } | undefined;
-  if (!user) {
+  const hash = await hashPassword(password);
+  const tokenHash = createHash("sha256").update(token).digest("hex");
+  const result = db.prepare(`
+    UPDATE users
+    SET password = ?, password_changed_at = ?, reset_token_hash = NULL, reset_token_expires_at = NULL
+    WHERE id = ? AND reset_token_hash = ? AND reset_token_expires_at > ?
+  `).run(hash, Math.floor(Date.now() / 1000), userId, tokenHash, Date.now());
+  if (result.changes === 0) {
     recordAttempt(`reset:${ip}`);
     return NextResponse.json({ error: "Invalid or expired reset link" }, { status: 400 });
   }
-
-  const hash = await bcrypt.hash(password, 10);
-  db.prepare("UPDATE users SET password = ?, password_changed_at = ? WHERE id = ?")
-    .run(hash, Math.floor(Date.now() / 1000), user.id);
 
   return NextResponse.json({ message: "Password updated. You can now sign in with your new password." });
 }

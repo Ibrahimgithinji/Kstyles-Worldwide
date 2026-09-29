@@ -7,7 +7,7 @@ const COUNTRIES = ["Kenya", "United States", "United Kingdom", "Canada", "Austra
 export default function CheckoutPage() {
   const router = useRouter();
   const [items, setItems] = useState<any[]>([]);
-  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", address: "", city: "", zip: "", country: "US" });
+  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", address: "", city: "", zip: "", country: "United States" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   useEffect(() => { setItems(getCart()); }, []);

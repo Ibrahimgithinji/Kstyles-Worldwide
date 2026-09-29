@@ -35,20 +35,27 @@ export function getAuthUser(req: NextRequest) {
   const auth = req.headers.get("authorization");
   if (auth && auth.startsWith("Bearer ")) {
     const user = verifyToken(auth.slice(7));
-    if (user && !user.purpose && sessionIsFresh(user)) return user;
+    if (user && !user.purpose) {
+      const freshUser = getFreshSession(user);
+      if (freshUser) return freshUser;
+    }
   }
   const cookie = req.cookies.get(COOKIE_NAME)?.value;
   if (cookie) {
     const user = verifyToken(cookie);
-    if (user && !user.purpose && sessionIsFresh(user)) return user;
+    if (user && !user.purpose) {
+      const freshUser = getFreshSession(user);
+      if (freshUser) return freshUser;
+    }
   }
   return null;
 }
 
-function sessionIsFresh(user: { id: string; iat?: number }) {
-  const row = db.prepare("SELECT password_changed_at FROM users WHERE id = ?").get(user.id) as { password_changed_at?: number } | undefined;
-  if (!row) return false;
-  return (user.iat ?? 0) >= (row.password_changed_at || 0);
+function getFreshSession(user: { id: string; email: string; iat?: number; role: string }) {
+  const row = db.prepare("SELECT role, password_changed_at FROM users WHERE id = ?").get(user.id) as { role: string; password_changed_at?: number } | undefined;
+  if (!row) return null;
+  if ((user.iat ?? 0) < (row.password_changed_at || 0)) return null;
+  return { ...user, role: row.role };
 }
 
 export const RESET_TOKEN_EXPIRY_SECONDS = 60 * 30;

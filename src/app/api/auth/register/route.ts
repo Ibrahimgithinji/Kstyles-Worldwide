@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import db from "@/lib/db";
 import { signToken, authCookieOptions, COOKIE_NAME } from "@/lib/auth";
+import { hashPassword } from "@/lib/password";
 import { clientIp, checkRateLimit, recordAttempt } from "@/lib/rate-limit";
 import { isEmail, isPassword, isStringLen } from "@/lib/validate";
 import { readJson, errorResponse } from "@/lib/body";
@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
       { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } }
     );
   }
+  recordAttempt(key);
 
   let body: any;
   try {
@@ -31,11 +32,10 @@ export async function POST(req: NextRequest) {
   const lower = email.toLowerCase();
   const existing = db.prepare("SELECT id FROM users WHERE email = ?").get(lower);
   if (existing) {
-    recordAttempt(key);
     return NextResponse.json({ error: "Email in use" }, { status: 400 });
   }
 
-  const hash = await bcrypt.hash(password, 10);
+  const hash = await hashPassword(password);
   const id = crypto.randomUUID();
   db.prepare("INSERT INTO users (id, name, email, password, role) VALUES (?, ?, ?, ?, 'customer')")
     .run(id, name, lower, hash);

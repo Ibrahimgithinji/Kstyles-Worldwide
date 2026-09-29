@@ -1,10 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createHash } from "node:crypto";
 import db from "@/lib/db";
-import { signResetToken } from "@/lib/auth";
+import { RESET_TOKEN_EXPIRY_SECONDS, signResetToken } from "@/lib/auth";
 import { clientIp, checkRateLimit, recordAttempt } from "@/lib/rate-limit";
 import { isEmail } from "@/lib/validate";
 import { readJson, errorResponse } from "@/lib/body";
 import { appUrl, assertEmailConfigured, EmailConfigurationError, sendEmail } from "@/lib/email";
+
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  })[char]!);
+}
 
 export async function POST(req: NextRequest) {
   // Check this before the account lookup to avoid both reset-token logging and
@@ -53,13 +64,17 @@ export async function POST(req: NextRequest) {
   const user = db.prepare("SELECT id, name FROM users WHERE email = ?").get(lower) as { id: string; name: string } | undefined;
   if (user) {
     const token = signResetToken(user.id);
+    const tokenHash = createHash("sha256").update(token).digest("hex");
+    db.prepare("UPDATE users SET reset_token_hash = ?, reset_token_expires_at = ? WHERE id = ?")
+      .run(tokenHash, Date.now() + RESET_TOKEN_EXPIRY_SECONDS * 1000, user.id);
     const link = appUrl(`/auth/reset?token=${token}`);
+    const safeName = escapeHtml(user.name);
     try {
       await sendEmail({
         to: lower,
         subject: "Kstyles Worldwide — Reset your password",
         text: `Hi ${user.name},\n\nWe received a request to reset your Kstyles password. Open the link below to choose a new one. It expires in 30 minutes.\n\n${link}\n\nIf you didn't request this, you can safely ignore this email.\n\n— Kstyles Worldwide`,
-        html: `<p>Hi ${user.name},</p><p>We received a request to reset your Kstyles password. <a href="${link}">Click here to choose a new one</a>. It expires in 30 minutes.</p><p>If you didn't request this, you can safely ignore this email.</p>`,
+        html: `<p>Hi ${safeName},</p><p>We received a request to reset your Kstyles password. <a href="${link}">Click here to choose a new one</a>. It expires in 30 minutes.</p><p>If you didn't request this, you can safely ignore this email.</p>`,
       });
     } catch {
       // Do not write the reset link or provider response to logs. Keep the

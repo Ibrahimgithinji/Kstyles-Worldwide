@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { getCart } from "@/lib/cart";
@@ -92,9 +93,9 @@ export default function Header() {
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
 
         {/* Brand */}
-        <Link href="/" className="group flex items-center gap-3">
-          <span className="flex h-9 w-9 items-center justify-center rounded-sm bg-gradient-to-br from-[#f0d060] via-[#d4af37] to-[#8a6d1a] shadow-[0_0_20px_rgba(212,175,55,0.35)]">
-            <span className="text-sm font-black tracking-tighter text-black">K</span>
+        <Link href="/" aria-label="Kstyles Worldwide home" className="group flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-sm border border-[#d4af37]/60 bg-black p-1 shadow-[0_0_20px_rgba(212,175,55,0.2)]">
+            <Image src="/favicon.ico" alt="" width={40} height={40} unoptimized className="h-full w-full object-contain" />
           </span>
           <span className="flex flex-col leading-none">
             <span className="text-lg font-bold tracking-[0.22em] text-white">KSTYLES</span>

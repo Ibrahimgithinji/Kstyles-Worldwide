@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { getAuthUser } from "@/lib/auth";
+import { readBytes, errorResponse } from "@/lib/body";
 
 const ALLOWED = /^image\/(png|jpe?g|webp|gif|avif)$/i;
 const MAX_SIZE = 5 * 1024 * 1024;
@@ -25,24 +26,36 @@ export async function POST(req: NextRequest) {
   const user = getAuthUser(req);
   if (!user || user.role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const contentLength = Number(req.headers.get("content-length"));
-  if (Number.isFinite(contentLength) && contentLength > MAX_REQUEST_SIZE) {
-    return NextResponse.json({ error: "Upload request exceeds size limit" }, { status: 413 });
+  let requestBytes: Uint8Array<ArrayBuffer>;
+  try {
+    requestBytes = await readBytes(req, MAX_REQUEST_SIZE);
+  } catch (error) {
+    return errorResponse(error);
   }
 
-  const file = (await req.formData()).get("file");
+  let file: FormDataEntryValue | null;
+  try {
+    const multipart = new Request(req.url, {
+      method: "POST",
+      headers: { "content-type": req.headers.get("content-type") ?? "" },
+      body: requestBytes,
+    });
+    file = (await multipart.formData()).get("file");
+  } catch {
+    return NextResponse.json({ error: "Invalid multipart upload" }, { status: 400 });
+  }
   if (!(file instanceof File)) return NextResponse.json({ error: "No file provided" }, { status: 400 });
   if (!ALLOWED.test(file.type)) return NextResponse.json({ error: "Unsupported file type" }, { status: 400 });
   if (file.size > MAX_SIZE) return NextResponse.json({ error: "File exceeds 5MB limit" }, { status: 400 });
 
-  const bytes = Buffer.from(await file.arrayBuffer());
-  const kind = sniffImage(bytes);
+  const fileBytes = Buffer.from(await file.arrayBuffer());
+  const kind = sniffImage(fileBytes);
   if (!kind) return NextResponse.json({ error: "File content is not a valid image" }, { status: 400 });
 
   const name = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${extForType[kind]}`;
   const dir = path.join(process.cwd(), "uploads");
   await mkdir(dir, { recursive: true });
-  await writeFile(path.join(dir, name), bytes);
+  await writeFile(path.join(dir, name), fileBytes);
 
   return NextResponse.json({ url: `/api/images/${name}` });
 }

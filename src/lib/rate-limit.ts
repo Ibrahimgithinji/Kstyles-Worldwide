@@ -7,6 +7,14 @@ const LOCK_FAILURES = 5;
 const LOCK_MS = 10 * 60 * 1000;
 const MAX_BUCKETS = 10_000;
 
+function saveBucket(key: string, bucket: Bucket) {
+  if (!store.has(key) && store.size >= MAX_BUCKETS) {
+    const oldest = store.keys().next().value;
+    if (oldest !== undefined) store.delete(oldest);
+  }
+  store.set(key, bucket);
+}
+
 setInterval(() => {
   const cutoff = Date.now() - WINDOW_MS;
   for (const [key, bucket] of store) {
@@ -35,11 +43,11 @@ export function checkRateLimit(key: string): { allowed: boolean; retryAfterSecon
   bucket.timestamps = bucket.timestamps.filter(t => now - t < WINDOW_MS);
   if (bucket.timestamps.length >= MAX_ATTEMPTS) {
     bucket.lockedUntil = now + LOCK_MS;
-    store.set(key, bucket);
+    saveBucket(key, bucket);
     return { allowed: false, retryAfterSeconds: LOCK_MS / 1000 };
   }
 
-  store.set(key, bucket);
+  saveBucket(key, bucket);
   return { allowed: true, retryAfterSeconds: 0 };
 }
 
@@ -51,17 +59,13 @@ export function recordFailure(key: string) {
     bucket.lockedUntil = now + LOCK_MS;
     bucket.failures = 0;
   }
-  store.set(key, bucket);
+  saveBucket(key, bucket);
 }
 
 export function recordAttempt(key: string) {
   const bucket = store.get(key) ?? { timestamps: [], failures: 0, lockedUntil: 0 };
   bucket.timestamps.push(Date.now());
-  if (store.size > MAX_BUCKETS) {
-    const oldest = store.keys().next().value;
-    if (oldest) store.delete(oldest);
-  }
-  store.set(key, bucket);
+  saveBucket(key, bucket);
 }
 
 export function resetRateLimit(key: string) {

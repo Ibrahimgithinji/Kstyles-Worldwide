@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 const isDev = process.env.NODE_ENV !== "production";
 
@@ -20,13 +21,16 @@ const CSP = [
   "form-action 'self'",
 ].join("; ");
 
-export function proxy() {
+export function proxy(req: NextRequest) {
   const res = NextResponse.next();
   res.headers.set("Content-Security-Policy", CSP);
   res.headers.set("X-Content-Type-Options", "nosniff");
   res.headers.set("X-Frame-Options", "DENY");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   res.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  if (req.nextUrl.pathname === "/auth/reset") {
+    res.headers.set("Referrer-Policy", "no-referrer");
+  }
   if (process.env.NODE_ENV === "production") {
     res.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains");
   }

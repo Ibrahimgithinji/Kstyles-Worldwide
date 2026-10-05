@@ -12,9 +12,9 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
-  --text-xs: clamp(0.625rem, calc(0.55rem + 0.25vw), 0.75rem);
-  --text-sm: clamp(0.75rem, calc(0.66rem + 0.35vw), 0.875rem);
-  --text-base: clamp(0.875rem, calc(0.8rem + 0.4vw), 1rem);
+  --text-xs: clamp(0.75rem, calc(0.6875rem + 0.15vw), 0.8125rem);
+  --text-sm: clamp(0.875rem, calc(0.8125rem + 0.2vw), 0.9375rem);
+  --text-base: clamp(1rem, calc(0.9375rem + 0.2vw), 1.0625rem);
   --text-lg: clamp(1rem, calc(0.92rem + 0.45vw), 1.125rem);
   --text-xl: clamp(1.125rem, calc(1.05rem + 0.5vw), 1.25rem);
   --text-2xl: clamp(1.25rem, calc(1.15rem + 0.75vw), 1.5rem);

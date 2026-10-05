@@ -12,6 +12,14 @@ const links = [
   { href: "/blog", label: "Blog" },
 ];
 
+const menuLinks = [
+  ...links,
+  { href: "/about", label: "About" },
+  { href: "/faq", label: "FAQ" },
+  { href: "/shipping", label: "Shipping" },
+  { href: "/contact", label: "Contact" },
+];
+
 function CartIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
@@ -152,7 +160,7 @@ export default function Header() {
           )}
 
           {/* Mobile burger */}
-          <button onClick={() => setOpen(!open)} className="flex h-10 w-10 flex-col items-center justify-center gap-[5px] md:hidden" aria-label="Menu">
+          <button onClick={() => setOpen(!open)} className="flex h-10 w-10 flex-col items-center justify-center gap-[5px] md:hidden" aria-label="Menu" aria-expanded={open} aria-controls="mobile-navigation">
             <span className={`block h-[2px] w-6 rounded-full bg-white transition-all duration-300 ${open ? "translate-y-[7px] rotate-45" : ""}`} />
             <span className={`block h-[2px] w-6 rounded-full bg-white transition-all duration-300 ${open ? "opacity-0" : ""}`} />
             <span className={`block h-[2px] w-6 rounded-full bg-white transition-all duration-300 ${open ? "-translate-y-[7px] -rotate-45" : ""}`} />
@@ -161,9 +169,9 @@ export default function Header() {
       </div>
 
       {/* Mobile menu */}
-      <div className={`overflow-hidden border-t border-[#2a2a2a] bg-black/95 backdrop-blur-xl transition-all duration-300 md:hidden ${open ? "max-h-96" : "max-h-0 border-t-0"}`}>
+      <div id="mobile-navigation" className={`overflow-y-auto overflow-x-hidden border-t border-[#2a2a2a] bg-black/95 backdrop-blur-xl transition-all duration-300 md:hidden ${open ? "max-h-[80vh]" : "max-h-0 border-t-0"}`}>
         <nav className="flex flex-col gap-1 px-4 py-4">
-          {links.map(l => (
+          {menuLinks.map(l => (
             <Link key={l.href} href={l.href} onClick={() => setOpen(false)} className={`rounded-lg px-3 py-3 text-sm font-medium uppercase tracking-widest transition-colors ${isActive(l.href) ? "bg-[#d4af37]/10 text-[#d4af37]" : "text-[#c9c9c9] hover:bg-white/5 hover:text-white"}`}>
               {l.label}
             </Link>

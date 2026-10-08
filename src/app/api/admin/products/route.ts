@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthUser } from "@/lib/auth";
+import { getAuthUser, isSameOriginRequest } from "@/lib/auth";
 import db from "@/lib/db";
 import { isStringLen, isPositiveNumber, isSafeUrl } from "@/lib/validate";
 import { readJson, errorResponse } from "@/lib/body";
@@ -15,6 +15,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const user = getAuthUser(req);
   if (!user || user.role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   let body: any;

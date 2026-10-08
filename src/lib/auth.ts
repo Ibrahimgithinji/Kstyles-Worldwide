@@ -51,6 +51,18 @@ export function getAuthUser(req: NextRequest) {
   return null;
 }
 
+export function isSameOriginRequest(req: NextRequest): boolean {
+  const origin = req.headers.get("origin");
+  if (!origin) return false;
+
+  try {
+    const requestOrigin = new URL(origin);
+    return origin === requestOrigin.origin && requestOrigin.origin === req.nextUrl.origin;
+  } catch {
+    return false;
+  }
+}
+
 function getFreshSession(user: { id: string; email: string; iat?: number; role: string }) {
   const row = db.prepare("SELECT role, password_changed_at FROM users WHERE id = ?").get(user.id) as { role: string; password_changed_at?: number } | undefined;
   if (!row) return null;

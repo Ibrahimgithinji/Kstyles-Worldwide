@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
-import { getAuthUser } from "@/lib/auth";
+import { getAuthUser, isSameOriginRequest } from "@/lib/auth";
 import { readBytes, errorResponse } from "@/lib/body";
 
 const ALLOWED = /^image\/(png|jpe?g|webp|gif|avif)$/i;
@@ -23,6 +23,7 @@ function sniffImage(buffer: Buffer): "png" | "jpeg" | "gif" | "webp" | "avif" | 
 const extForType: Record<string, string> = { png: "png", jpeg: "jpg", gif: "gif", webp: "webp", avif: "avif" };
 
 export async function POST(req: NextRequest) {
+  if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const user = getAuthUser(req);
   if (!user || user.role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

@@ -57,6 +57,10 @@ written to production logs. See `.env.example` for the required variables.
 
 `/api/auth/login`, `/api/auth/register`, `/api/auth/me`, `/api/products`, `/api/products/[id]`, `/api/orders`, `/api/admin/products`, `/api/admin/products/[id]`, `/api/admin/orders`, `/api/collections`, `/api/blog`, `/api/blog/[slug]`, `/api/contact`, `/api/newsletter`
 
+Cookie-authenticated admin write requests, including image uploads, must include
+the site's matching `Origin` header. Browser requests from the admin dashboard
+include it automatically; requests without a matching origin are rejected.
+
 ## Scripts
 
 ```bash

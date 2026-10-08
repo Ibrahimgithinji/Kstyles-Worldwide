@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthUser } from "@/lib/auth";
+import { getAuthUser, isSameOriginRequest } from "@/lib/auth";
 import db, { logAdminAction, DESIGN_STATUSES } from "@/lib/db";
 import { readJson, errorResponse } from "@/lib/body";
 import { isStringLen, isPositiveNumber, isSafeUrl } from "@/lib/validate";
@@ -25,6 +25,7 @@ function parseSizes(raw: unknown): Record<string, number> {
 }
 
 export async function POST(req: NextRequest) {
+  if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const user = getAuthUser(req);
   if (!user || user.role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   let body: any;
@@ -58,6 +59,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const user = getAuthUser(req);
   if (!user || user.role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   let body: any;

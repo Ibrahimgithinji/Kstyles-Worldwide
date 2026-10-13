@@ -80,6 +80,13 @@ db.exec(`
     email TEXT UNIQUE NOT NULL,
     createdAt TEXT DEFAULT (datetime('now'))
   );
+  CREATE TABLE IF NOT EXISTS rate_limit_buckets (
+    key TEXT PRIMARY KEY,
+    timestamps TEXT NOT NULL,
+    failures INTEGER NOT NULL DEFAULT 0,
+    lockedUntil INTEGER NOT NULL DEFAULT 0,
+    updatedAt INTEGER NOT NULL
+  );
 `);
 
 // Admin audit trail

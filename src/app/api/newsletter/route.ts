@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import { isEmail } from "@/lib/validate";
 import { readJson, errorResponse } from "@/lib/body";
+import { isSameOriginRequest } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
+  if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
   let body: any;
   try {
     body = await readJson(req);

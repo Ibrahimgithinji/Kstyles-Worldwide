@@ -23,6 +23,22 @@ Before running the seed, copy `.env.example` to `.env` and set a unique
 `SEED_ADMIN_PASSWORD` with at least 12 characters. Keep `.env` private; it is
 ignored by Git.
 
+For production, `JWT_SECRET` must be a non-placeholder value of at least 32
+bytes. Generate it with `openssl rand -base64 32`; the app only permits its
+random per-boot fallback in development.
+
+Production rate limits are persisted in SQLite and require the VPS reverse
+proxy to overwrite `X-Real-IP` with the verified client IP. When using
+Cloudflare, restrict origin access to Cloudflare IP ranges and configure the
+proxy to trust `CF-Connecting-IP` only from Cloudflare; never forward a
+client-supplied `X-Real-IP` unchanged. Bind the app to localhost behind the
+reverse proxy.
+
+The site uses a fresh CSP nonce on each page request. This requires dynamic
+server rendering; production script and style policies do not allow inline
+content without a nonce. Inline style attributes are blocked except for the
+fixed hash allowlist required by Next.js Image's transparent placeholder style.
+
 ### Database Setup
 
 The app auto-creates its tables on first run, but they must be seeded to have data.
@@ -57,9 +73,11 @@ written to production logs. See `.env.example` for the required variables.
 
 `/api/auth/login`, `/api/auth/register`, `/api/auth/me`, `/api/products`, `/api/products/[id]`, `/api/orders`, `/api/admin/products`, `/api/admin/products/[id]`, `/api/admin/orders`, `/api/collections`, `/api/blog`, `/api/blog/[slug]`, `/api/contact`, `/api/newsletter`
 
-Cookie-authenticated admin write requests, including image uploads, must include
-the site's matching `Origin` header. Browser requests from the admin dashboard
-include it automatically; requests without a matching origin are rejected.
+All write API requests must include the site's matching `Origin` header, and
+JSON endpoints require `Content-Type: application/json`. Browser requests
+include the origin automatically; requests without a matching origin are
+rejected. Cookie-authenticated admin writes, including image uploads, use the
+same check.
 
 ## Scripts
 

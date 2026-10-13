@@ -9,10 +9,19 @@ const DEV_FALLBACK_SECRET = crypto.randomBytes(32).toString("hex");
 
 function getSecret(): string {
   const env = process.env.JWT_SECRET;
-  if (env) return env;
-  if (process.env.NODE_ENV === "production") {
+  if (env) {
+    const isPlaceholder = /^(replace-with|your-|change-me|placeholder|example)(?:[-_]|$)/i.test(env);
+    if (Buffer.byteLength(env, "utf8") < 32 || env !== env.trim() || isPlaceholder) {
+      throw new Error(
+        "FATAL: JWT_SECRET must be a non-placeholder value of at least 32 bytes. " +
+        "Generate one with: openssl rand -base64 32"
+      );
+    }
+    return env;
+  }
+  if (process.env.NODE_ENV !== "development") {
     throw new Error(
-      "FATAL: JWT_SECRET is not set. Refusing to run in production without a secret. " +
+      "FATAL: JWT_SECRET is not set. Refusing to run outside development without a secret. " +
       "Generate one with: openssl rand -base64 32"
     );
   }
@@ -57,7 +66,23 @@ export function isSameOriginRequest(req: NextRequest): boolean {
 
   try {
     const requestOrigin = new URL(origin);
-    return origin === requestOrigin.origin && requestOrigin.origin === req.nextUrl.origin;
+    const configuredAppUrl = process.env.APP_URL;
+    let expectedOrigin: string;
+
+    if (configuredAppUrl) {
+      const appUrl = new URL(configuredAppUrl);
+      if (appUrl.username || appUrl.password || (process.env.NODE_ENV === "production" && appUrl.protocol !== "https:")) {
+        return false;
+      }
+      expectedOrigin = appUrl.origin;
+    } else {
+      if (process.env.NODE_ENV === "production") return false;
+      const host = req.headers.get("host");
+      if (!host) return false;
+      expectedOrigin = new URL(`${req.nextUrl.protocol}//${host}`).origin;
+    }
+
+    return origin === requestOrigin.origin && requestOrigin.origin === expectedOrigin;
   } catch {
     return false;
   }

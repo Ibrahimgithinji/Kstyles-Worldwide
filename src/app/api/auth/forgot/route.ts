@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "node:crypto";
 import db from "@/lib/db";
 import { RESET_TOKEN_EXPIRY_SECONDS, signResetToken } from "@/lib/auth";
-import { clientIp, checkRateLimit, recordAttempt } from "@/lib/rate-limit";
+import { clientIp, checkRateLimit } from "@/lib/rate-limit";
 import { isEmail } from "@/lib/validate";
 import { readJson, errorResponse } from "@/lib/body";
 import { appUrl, assertEmailConfigured, EmailConfigurationError, sendEmail } from "@/lib/email";
+import { isSameOriginRequest } from "@/lib/auth";
 
 function escapeHtml(value: string) {
   return value.replace(/[&<>"']/g, char => ({
@@ -18,6 +19,8 @@ function escapeHtml(value: string) {
 }
 
 export async function POST(req: NextRequest) {
+  if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
   // Check this before the account lookup to avoid both reset-token logging and
   // account enumeration while production email delivery is unavailable.
   try {
@@ -57,9 +60,6 @@ export async function POST(req: NextRequest) {
       { status: 429, headers: { "Retry-After": String(emailLimit.retryAfterSeconds) } }
     );
   }
-
-  recordAttempt(`forgot:${ip}`);
-  recordAttempt(`forgot-email:${lower}`);
 
   const user = db.prepare("SELECT id, name FROM users WHERE email = ?").get(lower) as { id: string; name: string } | undefined;
   if (user) {

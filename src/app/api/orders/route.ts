@@ -2,15 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import { isEmail, isStringLen } from "@/lib/validate";
 import { readJson, errorResponse } from "@/lib/body";
-import { clientIp, checkRateLimit, recordAttempt } from "@/lib/rate-limit";
+import { clientIp, checkRateLimit } from "@/lib/rate-limit";
+import { isSameOriginRequest } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
+  if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
   const key = "orders:" + clientIp(req);
   const rl = checkRateLimit(key);
   if (!rl.allowed) {
     return NextResponse.json({ error: "Too many orders placed. Try again later." }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } });
   }
-  recordAttempt(key);
   let body: any;
   try {
     body = await readJson(req);

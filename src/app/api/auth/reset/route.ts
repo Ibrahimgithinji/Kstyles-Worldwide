@@ -3,11 +3,14 @@ import { createHash } from "node:crypto";
 import db from "@/lib/db";
 import { verifyResetToken } from "@/lib/auth";
 import { hashPassword } from "@/lib/password";
-import { clientIp, checkRateLimit, recordAttempt } from "@/lib/rate-limit";
+import { clientIp, checkRateLimit } from "@/lib/rate-limit";
 import { isPassword } from "@/lib/validate";
 import { readJson, errorResponse } from "@/lib/body";
+import { isSameOriginRequest } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
+  if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
   const ip = clientIp(req);
   const limit = checkRateLimit(`reset:${ip}`);
   if (!limit.allowed) {
@@ -30,7 +33,6 @@ export async function POST(req: NextRequest) {
 
   const userId = verifyResetToken(token);
   if (!userId) {
-    recordAttempt(`reset:${ip}`);
     return NextResponse.json({ error: "Invalid or expired reset link" }, { status: 400 });
   }
 
@@ -42,7 +44,6 @@ export async function POST(req: NextRequest) {
     WHERE id = ? AND reset_token_hash = ? AND reset_token_expires_at > ?
   `).run(hash, Math.floor(Date.now() / 1000), userId, tokenHash, Date.now());
   if (result.changes === 0) {
-    recordAttempt(`reset:${ip}`);
     return NextResponse.json({ error: "Invalid or expired reset link" }, { status: 400 });
   }
 

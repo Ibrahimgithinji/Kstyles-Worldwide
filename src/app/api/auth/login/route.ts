@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
-import { signToken, authCookieOptions, COOKIE_NAME } from "@/lib/auth";
+import { signToken, authCookieOptions, COOKIE_NAME, isSameOriginRequest } from "@/lib/auth";
 import { hashPassword, verifyPassword } from "@/lib/password";
-import { clientIp, checkRateLimit, recordAttempt, recordFailure, resetRateLimit } from "@/lib/rate-limit";
+import { clientIp, checkRateLimit, recordFailure, resetRateLimit } from "@/lib/rate-limit";
 import { isEmail, isPassword } from "@/lib/validate";
 import { readJson, HttpError, errorResponse } from "@/lib/body";
 
 const DUMMY_PASSWORD_HASH = "$2b$10$7R/941SHdmY6OeTfi.z6Bub7OpBl80MieeFhcS8ly135BuZQRahgO";
 
 export async function POST(req: NextRequest) {
+  if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
   const ip = clientIp(req);
   const key = `login:${ip}`;
   const limit = checkRateLimit(key);
@@ -33,16 +35,15 @@ export async function POST(req: NextRequest) {
   const user = db.prepare("SELECT * FROM users WHERE email = ?").get(email.toLowerCase()) as any;
   const verification = await verifyPassword(password, user?.password ?? DUMMY_PASSWORD_HASH);
   if (!user || !verification.valid) {
-    recordAttempt(key);
     recordFailure(key);
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }
 
+  const token = signToken({ id: user.id, email: user.email, role: user.role });
   if (verification.needsRehash) {
     db.prepare("UPDATE users SET password = ? WHERE id = ?").run(await hashPassword(password), user.id);
   }
 
-  const token = signToken({ id: user.id, email: user.email, role: user.role });
   resetRateLimit(key);
   const res = NextResponse.json({ user: { id: user.id, name: user.name, email: user.email, role: user.role } });
   res.cookies.set(COOKIE_NAME, token, authCookieOptions(60 * 60 * 24 * 7));

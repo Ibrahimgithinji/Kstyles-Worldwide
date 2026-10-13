@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function readJson(req: NextRequest, maxBytes = 100_000) {
+  const contentType = req.headers.get("content-type")?.split(";")[0].trim().toLowerCase();
+  if (contentType !== "application/json") {
+    throw new HttpError(415, "Content-Type must be application/json");
+  }
+
   const bytes = await readBytes(req, maxBytes);
 
   try {

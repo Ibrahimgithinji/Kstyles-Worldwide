@@ -3,27 +3,29 @@ import type { NextRequest } from "next/server";
 
 const isDev = process.env.NODE_ENV !== "production";
 
-// React's development-mode client uses `eval` to reconstruct callstacks from
-// source maps. Production React never needs it, so keep it dev-only.
-const SCRIPT_SRC = isDev
-  ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
-  : "script-src 'self' 'unsafe-inline'";
-
-const CSP = [
-  "default-src 'self'",
-  SCRIPT_SRC,
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "img-src 'self' data: blob: https://images.unsplash.com",
-  "font-src 'self' data: https://fonts.gstatic.com",
-  "connect-src 'self'",
-  "frame-ancestors 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-].join("; ");
-
 export function proxy(req: NextRequest) {
-  const res = NextResponse.next();
-  res.headers.set("Content-Security-Policy", CSP);
+  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-nonce", nonce);
+
+  const csp = [
+    "default-src 'self'",
+    `script-src 'self' 'nonce-${nonce}'${isDev ? " 'unsafe-eval'" : ""}`,
+    `style-src 'self'${isDev ? " 'unsafe-inline'" : ` 'nonce-${nonce}'`} https://fonts.googleapis.com`,
+    isDev
+      ? "style-src-attr 'unsafe-inline'"
+      : "style-src-attr 'unsafe-hashes' 'sha256-zlqnbDt84zf1iSefLU/ImC54isoprH/MRiVZGskwexk='",
+    "img-src 'self' data: blob: https://images.unsplash.com",
+    "font-src 'self' data: https://fonts.gstatic.com",
+    "connect-src 'self'",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join("; ");
+  requestHeaders.set("Content-Security-Policy", csp);
+
+  const res = NextResponse.next({ request: { headers: requestHeaders } });
+  res.headers.set("Content-Security-Policy", csp);
   res.headers.set("X-Content-Type-Options", "nosniff");
   res.headers.set("X-Frame-Options", "DENY");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");

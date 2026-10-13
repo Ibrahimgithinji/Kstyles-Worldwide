@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import { isEmail, isStringLen, isPositiveNumber } from "@/lib/validate";
 import { readJson, errorResponse } from "@/lib/body";
-import { clientIp, checkRateLimit, recordAttempt } from "@/lib/rate-limit";
+import { clientIp, checkRateLimit } from "@/lib/rate-limit";
+import { isSameOriginRequest } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
+  if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
   const ip = clientIp(req);
   const limit = checkRateLimit(`design-order:${ip}`);
   if (!limit.allowed) {
@@ -32,8 +35,6 @@ export async function POST(req: NextRequest) {
 
   const design = db.prepare("SELECT * FROM designs WHERE id = ? AND active = 1").get(designId) as any;
   if (!design) return NextResponse.json({ error: "Design not found" }, { status: 404 });
-  recordAttempt(`design-order:${ip}`);
-
   let sizePrices: Record<string, number> = {};
   try { sizePrices = JSON.parse(design.sizePrices || "{}"); } catch { /* ignore */ }
   const unitPrice = typeof sizePrices[size] === "number" && sizePrices[size] > 0 ? sizePrices[size] : design.price;

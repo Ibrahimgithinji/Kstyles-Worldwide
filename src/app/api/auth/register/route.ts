@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
-import { signToken, authCookieOptions, COOKIE_NAME } from "@/lib/auth";
+import { signToken, authCookieOptions, COOKIE_NAME, isSameOriginRequest } from "@/lib/auth";
 import { hashPassword } from "@/lib/password";
-import { clientIp, checkRateLimit, recordAttempt } from "@/lib/rate-limit";
+import { clientIp, checkRateLimit } from "@/lib/rate-limit";
 import { isEmail, isPassword, isStringLen } from "@/lib/validate";
 import { readJson, errorResponse } from "@/lib/body";
 
 export async function POST(req: NextRequest) {
+  if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
   const ip = clientIp(req);
   const key = `register:${ip}`;
   const limit = checkRateLimit(key);
@@ -16,8 +18,6 @@ export async function POST(req: NextRequest) {
       { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } }
     );
   }
-  recordAttempt(key);
-
   let body: any;
   try {
     body = await readJson(req);
@@ -37,9 +37,9 @@ export async function POST(req: NextRequest) {
 
   const hash = await hashPassword(password);
   const id = crypto.randomUUID();
+  const token = signToken({ id, email: lower, role: "customer" });
   db.prepare("INSERT INTO users (id, name, email, password, role) VALUES (?, ?, ?, ?, 'customer')")
     .run(id, name, lower, hash);
-  const token = signToken({ id, email: lower, role: "customer" });
   const res = NextResponse.json({ user: { id, name, email: lower, role: "customer" } });
   res.cookies.set(COOKIE_NAME, token, authCookieOptions(60 * 60 * 24 * 7));
   return res;

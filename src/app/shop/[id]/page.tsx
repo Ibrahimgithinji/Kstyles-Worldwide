@@ -1,9 +1,11 @@
 "use client";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { formatPrice } from "@/lib/utils";
 import { addToCart } from "@/lib/cart";
+
 interface Product {
   id: string;
   name: string;
@@ -15,14 +17,109 @@ interface Product {
   colors: string;
 }
 
+type ProductState =
+  | { status: "loading"; id: string }
+  | { status: "not-found"; id: string }
+  | { status: "error"; id: string }
+  | { status: "ready"; id: string; product: Product };
+
+function isProduct(value: unknown): value is Product {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "id" in value &&
+    typeof value.id === "string" &&
+    "name" in value &&
+    typeof value.name === "string" &&
+    "category" in value &&
+    typeof value.category === "string" &&
+    "description" in value &&
+    typeof value.description === "string" &&
+    "image" in value &&
+    (typeof value.image === "string" || value.image === null) &&
+    "price" in value &&
+    typeof value.price === "number" &&
+    "sizes" in value &&
+    typeof value.sizes === "string" &&
+    "colors" in value &&
+    typeof value.colors === "string"
+  );
+}
+
 export default function ProductDetail() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [p, setP] = useState<Product | null>(null);
+  const [productState, setProductState] = useState<ProductState>({ status: "loading", id: "" });
+  const [retryCount, setRetryCount] = useState(0);
   const [size, setSize] = useState("");
   const [color, setColor] = useState("");
-  useEffect(() => { fetch("/api/products/" + id).then(r => r.json()).then((d: { product: Product | null }) => { setP(d.product); if (d.product) { setSize(d.product.sizes.split(",")[0]); setColor(d.product.colors.split(",")[0]); } }); }, [id]);
-  if (!p) return <div className="pt-24 text-center"><p className="text-[#a0a0a0]">Loading...</p></div>;
+  useEffect(() => {
+    let active = true;
+
+    async function loadProduct() {
+      try {
+        const response = await fetch(`/api/products/${encodeURIComponent(id)}`);
+        if (response.status === 404) {
+          if (active) setProductState({ status: "not-found", id });
+          return;
+        }
+        if (!response.ok) throw new Error("Product request failed");
+
+        const data: unknown = await response.json();
+        if (
+          typeof data !== "object" ||
+          data === null ||
+          !("product" in data) ||
+          !isProduct(data.product)
+        ) {
+          throw new Error("Invalid product response");
+        }
+
+        if (active) {
+          setProductState({ status: "ready", id, product: data.product });
+          setSize(data.product.sizes.split(",")[0]);
+          setColor(data.product.colors.split(",")[0]);
+        }
+      } catch {
+        if (active) setProductState({ status: "error", id });
+      }
+    }
+
+    void loadProduct();
+    return () => {
+      active = false;
+    };
+  }, [id, retryCount]);
+
+  const p = productState.id === id && productState.status === "ready"
+    ? productState.product
+    : null;
+  if (productState.id !== id || productState.status === "loading") {
+    return <div className="pt-24 text-center"><p className="text-[#a0a0a0]">Loading...</p></div>;
+  }
+  if (productState.status === "not-found") {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 pt-16 text-center">
+        <h1 className="text-2xl font-bold text-white">Product not found</h1>
+        <p className="mt-2 text-[#a0a0a0]">This product may have been removed or is no longer available.</p>
+        <Link href="/shop" className="mt-6 rounded-md bg-[#d4af37] px-6 py-3 text-sm font-semibold uppercase tracking-widest text-black hover:bg-[#b8960f]">
+          Back to Shop
+        </Link>
+      </div>
+    );
+  }
+  if (productState.status === "error" || !p) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 pt-16 text-center">
+        <h1 className="text-2xl font-bold text-white">We couldn&apos;t load this product</h1>
+        <p role="alert" className="mt-2 text-[#a0a0a0]">Please check your connection and try again.</p>
+        <button onClick={() => { setProductState({ status: "loading", id }); setRetryCount(count => count + 1); }} className="mt-6 rounded-md bg-[#d4af37] px-6 py-3 text-sm font-semibold uppercase tracking-widest text-black hover:bg-[#b8960f]">
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
   const sizes: string[] = p.sizes.split(",");
   const colors: string[] = p.colors.split(",");
   const colorClassMap: Record<string, string> = {

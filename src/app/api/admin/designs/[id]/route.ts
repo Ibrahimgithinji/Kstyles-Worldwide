@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser, isSameOriginRequest } from "@/lib/auth";
-import db, { logAdminAction } from "@/lib/db";
+import db, { logAdminAction, withDatabaseContext } from "@/lib/db";
 import { readJson, errorResponse } from "@/lib/body";
 import { isStringLen, isPositiveNumber, isSafeUrl } from "@/lib/validate";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  const user = getAuthUser(req);
+  const user = await getAuthUser(req);
   if (!user || user.role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
-  const existing = db.prepare("SELECT id, sizePrices FROM designs WHERE id = ?").get(id) as any;
+  const existing = await withDatabaseContext({ userId: user.id, role: "admin" }, () =>
+    db.prepare("SELECT id, sizePrices FROM designs WHERE id = ?").get(id),
+  ) as any;
   if (!existing) return NextResponse.json({ error: "Design not found" }, { status: 404 });
 
   let body: any;
@@ -39,7 +41,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
   }
 
-  const slugOwner = db.prepare("SELECT id FROM designs WHERE slug = ? AND id != ?").get(slug, id);
+  const slugOwner = await withDatabaseContext({ userId: user.id, role: "admin" }, () =>
+    db.prepare("SELECT id FROM designs WHERE slug = ? AND id != ?").get(slug, id),
+  );
   if (slugOwner) return NextResponse.json({ error: "Slug already in use — choose another" }, { status: 409 });
 
   let finalSizes: Record<string, number>;
@@ -49,19 +53,23 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     try { finalSizes = JSON.parse(existing.sizePrices || "{}"); } catch { finalSizes = {}; }
   }
 
-  db.prepare("UPDATE designs SET name=?, slug=?, description=?, price=?, sizePrices=?, image=?, category=?, tags=?, active=? WHERE id=?")
-    .run(name, slug, description ?? "", price, JSON.stringify(finalSizes), image || "", String(category ?? "").slice(0, 40), String(tags ?? "").slice(0, 200), active === false || active === 0 ? 0 : 1, id);
-  logAdminAction(user.id, user.email, "design.update", id, `name=${name} base=${price}`);
+  await withDatabaseContext({ userId: user.id, role: "admin" }, async () => {
+    await db.prepare("UPDATE designs SET name=?, slug=?, description=?, price=?, sizePrices=?, image=?, category=?, tags=?, active=? WHERE id=?")
+      .run(name, slug, description ?? "", price, JSON.stringify(finalSizes), image || "", String(category ?? "").slice(0, 40), String(tags ?? "").slice(0, 200), active === false || active === 0 ? 0 : 1, id);
+    await logAdminAction(user.id, user.email, "design.update", id, `name=${name} base=${price}`);
+  });
   return NextResponse.json({ success: true });
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  const user = getAuthUser(req);
+  const user = await getAuthUser(req);
   if (!user || user.role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
-  const result = db.prepare("DELETE FROM designs WHERE id = ?").run(id);
+  const result = await withDatabaseContext({ userId: user.id, role: "admin" }, () =>
+    db.prepare("DELETE FROM designs WHERE id = ?").run(id),
+  );
   if (result.changes === 0) return NextResponse.json({ error: "Design not found" }, { status: 404 });
-  logAdminAction(user.id, user.email, "design.delete", id);
+  await logAdminAction(user.id, user.email, "design.delete", id);
   return NextResponse.json({ success: true });
 }

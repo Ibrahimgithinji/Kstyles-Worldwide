@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import { NextRequest } from "next/server";
 import crypto from "crypto";
-import db from "@/lib/db";
+import db, { withDatabaseContext } from "@/lib/db";
 
 // Random per-boot secret for environments without JWT_SECRET (dev only).
 // Never reuse across restarts; production requires JWT_SECRET explicitly.
@@ -40,12 +40,12 @@ export function verifyToken(token: string) {
   }
 }
 
-export function getAuthUser(req: NextRequest) {
+export async function getAuthUser(req: NextRequest) {
   const auth = req.headers.get("authorization");
   if (auth && auth.startsWith("Bearer ")) {
     const user = verifyToken(auth.slice(7));
     if (user && !user.purpose) {
-      const freshUser = getFreshSession(user);
+      const freshUser = await getFreshSession(user);
       if (freshUser) return freshUser;
     }
   }
@@ -53,7 +53,7 @@ export function getAuthUser(req: NextRequest) {
   if (cookie) {
     const user = verifyToken(cookie);
     if (user && !user.purpose) {
-      const freshUser = getFreshSession(user);
+      const freshUser = await getFreshSession(user);
       if (freshUser) return freshUser;
     }
   }
@@ -88,8 +88,11 @@ export function isSameOriginRequest(req: NextRequest): boolean {
   }
 }
 
-function getFreshSession(user: { id: string; email: string; iat?: number; role: string }) {
-  const row = db.prepare("SELECT role, password_changed_at FROM users WHERE id = ?").get(user.id) as { role: string; password_changed_at?: number } | undefined;
+async function getFreshSession(user: { id: string; email: string; iat?: number; role: string }) {
+  const row = await withDatabaseContext(
+    { userId: user.id, role: user.role === "admin" ? "admin" : "customer" },
+    () => db.prepare("SELECT role, password_changed_at FROM users WHERE id = ?").get(user.id),
+  ) as { role: string; password_changed_at?: number } | undefined;
   if (!row) return null;
   if ((user.iat ?? 0) < (row.password_changed_at || 0)) return null;
   return { ...user, role: row.role };

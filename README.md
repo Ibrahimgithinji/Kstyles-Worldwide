@@ -1,12 +1,12 @@
 # Kstyles Worldwide
 
-Luxury streetwear for the modern icon. A full e-commerce platform built with Next.js — real storefront, authentication, admin dashboard, and orders backed by SQLite.
+Luxury streetwear for the modern icon. A full e-commerce platform built with Next.js — real storefront, authentication, admin dashboard, and orders backed by SQLite locally or PostgreSQL in production.
 
 ## Tech Stack
 
 - Next.js 16 (App Router) + React 19 + TypeScript
 - Tailwind CSS v4 — dark luxury theme (black `#0a0a0a`, gold `#d4af37`)
-- SQLite via `better-sqlite3` (database at `prisma/dev.db`)
+- SQLite via `better-sqlite3` for local development; PostgreSQL with row-level security (RLS) in production
 - Auth: bcrypt + JWT stored in an HTTP-only cookie
 
 ## Getting Started
@@ -41,7 +41,8 @@ fixed hash allowlist required by Next.js Image's transparent placeholder style.
 
 ### Database Setup
 
-The app auto-creates its tables on first run, but they must be seeded to have data.
+For local development, the app auto-creates its SQLite tables on first run, but
+they must be seeded to have data.
 The seed creates the initial admin account, products, collections, and blog posts:
 
 ```bash
@@ -53,6 +54,51 @@ The initial admin email is `admin@kstyles.com`; its password is the private
 admin account if that value is missing or shorter than 12 characters.
 
 > Note: `prisma/dev.db` is gitignored, so a fresh clone requires re-seeding.
+
+### Supabase PostgreSQL and RLS
+
+Production requires `DATABASE_URL` and uses PostgreSQL. Local development keeps
+using SQLite when `DATABASE_URL` is unset. The application database role must
+not be a Supabase `postgres`/owner or service-role connection: those roles can
+bypass RLS.
+
+The migration in `supabase/migrations/` creates the tables and policies for the
+server's custom JWT authentication. Apply it to a new Supabase project using a
+privileged administrative connection, then create a dedicated login role for
+the app. Keep the password out of source control:
+
+```sql
+CREATE ROLE kstyles_runtime LOGIN PASSWORD 'use-a-unique-secret'
+  NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT NOREPLICATION NOBYPASSRLS;
+GRANT kstyles_app TO kstyles_runtime;
+```
+
+Use the `kstyles_runtime` connection string as `DATABASE_URL`. Do not give the
+running app `SUPABASE_MIGRATION_DATABASE_URL`; that variable is reserved for
+the one-time data importer and must use a privileged migration connection.
+
+For an existing SQLite installation, take and verify a restorable backup of
+the source database before proceeding. Keep the application on SQLite and
+stop writes during the copy. After applying the schema, set both migration
+variables in a private local `.env`, then import:
+
+```text
+SQLITE_DATABASE_PATH=prisma/dev.db
+SUPABASE_MIGRATION_DATABASE_URL=the-privileged-migration-connection
+```
+
+```bash
+npm run db:migrate-data
+```
+
+The importer refuses to write if any target table contains rows and wraps the
+copy in one transaction. Verify the reported row counts and application data
+before configuring production `DATABASE_URL` to use the restricted runtime
+role. Remove the migration URL from the web service environment afterward.
+Do not delete the SQLite source or switch live traffic until the backup and
+PostgreSQL data have been independently verified. The app sets transaction-
+local RLS context from its server-side authentication; direct client access to
+these tables is not granted to Supabase `anon` or `authenticated` roles.
 
 ### Password-reset email setup
 
@@ -85,4 +131,5 @@ same check.
 npm run dev      # development server
 npm run build    # production build
 npm run start    # serve production build
+npm run db:migrate-data # one-time SQLite-to-PostgreSQL data copy
 ```

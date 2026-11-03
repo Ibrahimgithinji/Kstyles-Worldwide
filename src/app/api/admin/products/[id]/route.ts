@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser, isSameOriginRequest } from "@/lib/auth";
-import db from "@/lib/db";
+import db, { withDatabaseContext } from "@/lib/db";
 import { isStringLen, isPositiveNumber, isSafeUrl } from "@/lib/validate";
 import { readJson, errorResponse } from "@/lib/body";
 import { logAdminAction } from "@/lib/db";
@@ -9,10 +9,12 @@ const CATEGORIES = ["tops", "bottoms", "outerwear", "accessories"];
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  const user = getAuthUser(req);
+  const user = await getAuthUser(req);
   if (!user || user.role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
-  const existing = db.prepare("SELECT id FROM products WHERE id = ?").get(id);
+  const existing = await withDatabaseContext({ userId: user.id, role: "admin" }, () =>
+    db.prepare("SELECT id FROM products WHERE id = ?").get(id),
+  );
   if (!existing) return NextResponse.json({ error: "Product not found" }, { status: 404 });
 
   let body: any;
@@ -29,19 +31,23 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (category && !CATEGORIES.includes(category)) return NextResponse.json({ error: "Invalid category" }, { status: 400 });
   if (image && !isSafeUrl(image)) return NextResponse.json({ error: "Invalid image URL" }, { status: 400 });
 
-  db.prepare("UPDATE products SET name=?, slug=?, description=?, price=?, category=?, sizes=?, colors=?, image=?, featured=? WHERE id=?")
-    .run(name, slug, description ?? "", price, category || "", String(sizes || "").slice(0, 200), String(colors || "").slice(0, 200), image || "", featured ? 1 : 0, id);
-  logAdminAction(user.id, user.email, "product.update", id, `name=${name} price=${price}`);
+  await withDatabaseContext({ userId: user.id, role: "admin" }, async () => {
+    await db.prepare("UPDATE products SET name=?, slug=?, description=?, price=?, category=?, sizes=?, colors=?, image=?, featured=? WHERE id=?")
+      .run(name, slug, description ?? "", price, category || "", String(sizes || "").slice(0, 200), String(colors || "").slice(0, 200), image || "", featured ? 1 : 0, id);
+    await logAdminAction(user.id, user.email, "product.update", id, `name=${name} price=${price}`);
+  });
   return NextResponse.json({ success: true });
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  const user = getAuthUser(req);
+  const user = await getAuthUser(req);
   if (!user || user.role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
-  const result = db.prepare("DELETE FROM products WHERE id = ?").run(id);
+  const result = await withDatabaseContext({ userId: user.id, role: "admin" }, () =>
+    db.prepare("DELETE FROM products WHERE id = ?").run(id),
+  );
   if (result.changes === 0) return NextResponse.json({ error: "Product not found" }, { status: 404 });
-  logAdminAction(user.id, user.email, "product.delete", id);
+  await logAdminAction(user.id, user.email, "product.delete", id);
   return NextResponse.json({ success: true });
 }

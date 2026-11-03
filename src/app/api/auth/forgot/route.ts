@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "node:crypto";
-import db from "@/lib/db";
+import db, { withDatabaseContext } from "@/lib/db";
 import { RESET_TOKEN_EXPIRY_SECONDS, signResetToken } from "@/lib/auth";
 import { clientIp, checkRateLimit } from "@/lib/rate-limit";
 import { isEmail } from "@/lib/validate";
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
   }
 
   const ip = clientIp(req);
-  const ipLimit = checkRateLimit(`forgot:${ip}`);
+  const ipLimit = await checkRateLimit(`forgot:${ip}`);
   if (!ipLimit.allowed) {
     return NextResponse.json(
       { error: `Too many requests. Try again in ${Math.ceil(ipLimit.retryAfterSeconds / 60)} minutes.` },
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
   }
 
   const lower = email.toLowerCase();
-  const emailLimit = checkRateLimit(`forgot-email:${lower}`);
+  const emailLimit = await checkRateLimit(`forgot-email:${lower}`);
   if (!emailLimit.allowed) {
     return NextResponse.json(
       { error: `Too many requests for this email. Try again in ${Math.ceil(emailLimit.retryAfterSeconds / 60)} minutes.` },
@@ -61,12 +61,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const user = db.prepare("SELECT id, name FROM users WHERE email = ?").get(lower) as { id: string; name: string } | undefined;
+  const user = await withDatabaseContext({ role: "auth" }, () =>
+    db.prepare("SELECT id, name FROM users WHERE email = ?").get(lower),
+  ) as { id: string; name: string } | undefined;
   if (user) {
     const token = signResetToken(user.id);
     const tokenHash = createHash("sha256").update(token).digest("hex");
-    db.prepare("UPDATE users SET reset_token_hash = ?, reset_token_expires_at = ? WHERE id = ?")
-      .run(tokenHash, Date.now() + RESET_TOKEN_EXPIRY_SECONDS * 1000, user.id);
+    await withDatabaseContext({ role: "auth" }, () =>
+      db.prepare("UPDATE users SET reset_token_hash = ?, reset_token_expires_at = ? WHERE id = ?")
+        .run(tokenHash, Date.now() + RESET_TOKEN_EXPIRY_SECONDS * 1000, user.id),
+    );
     const link = appUrl(`/auth/reset?token=${token}`);
     const safeName = escapeHtml(user.name);
     try {

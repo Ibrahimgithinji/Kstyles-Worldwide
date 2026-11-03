@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
   if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const key = "contact:" + clientIp(req);
-  const rl = checkRateLimit(key);
+  const rl = await checkRateLimit(key);
   if (!rl.allowed) {
     return NextResponse.json({ error: "Too many messages sent. Try again later." }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } });
   }
@@ -26,6 +26,6 @@ export async function POST(req: NextRequest) {
   if (!isStringLen(message, 5, 5000)) return NextResponse.json({ error: "Message must be 5-5000 characters" }, { status: 400 });
 
   const id = crypto.randomUUID();
-  db.prepare("INSERT INTO contacts (id, firstName, lastName, email, message) VALUES (?, ?, ?, ?, ?)").run(id, firstName, lastName, email.toLowerCase(), message);
+  await db.prepare("INSERT INTO contacts (id, firstName, lastName, email, message) VALUES (?, ?, ?, ?, ?)").run(id, firstName, lastName, email.toLowerCase(), message);
   return NextResponse.json({ success: true, id });
 }

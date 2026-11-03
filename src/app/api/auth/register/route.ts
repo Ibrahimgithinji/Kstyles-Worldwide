@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import db from "@/lib/db";
+import db, { withDatabaseContext } from "@/lib/db";
 import { signToken, authCookieOptions, COOKIE_NAME, isSameOriginRequest } from "@/lib/auth";
 import { hashPassword } from "@/lib/password";
 import { clientIp, checkRateLimit } from "@/lib/rate-limit";
@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
 
   const ip = clientIp(req);
   const key = `register:${ip}`;
-  const limit = checkRateLimit(key);
+  const limit = await checkRateLimit(key);
   if (!limit.allowed) {
     return NextResponse.json(
       { error: `Too many registrations. Try again in ${Math.ceil(limit.retryAfterSeconds / 60)} minutes.` },
@@ -30,7 +30,9 @@ export async function POST(req: NextRequest) {
   if (!isPassword(password)) return NextResponse.json({ error: "Password must be 8-128 characters" }, { status: 400 });
 
   const lower = email.toLowerCase();
-  const existing = db.prepare("SELECT id FROM users WHERE email = ?").get(lower);
+  const existing = await withDatabaseContext({ role: "auth" }, () =>
+    db.prepare("SELECT id FROM users WHERE email = ?").get(lower),
+  );
   if (existing) {
     return NextResponse.json({ error: "Email in use" }, { status: 400 });
   }
@@ -38,8 +40,10 @@ export async function POST(req: NextRequest) {
   const hash = await hashPassword(password);
   const id = crypto.randomUUID();
   const token = signToken({ id, email: lower, role: "customer" });
-  db.prepare("INSERT INTO users (id, name, email, password, role) VALUES (?, ?, ?, ?, 'customer')")
-    .run(id, name, lower, hash);
+  await withDatabaseContext({ role: "auth" }, () =>
+    db.prepare("INSERT INTO users (id, name, email, password, role) VALUES (?, ?, ?, ?, 'customer')")
+      .run(id, name, lower, hash),
+  );
   const res = NextResponse.json({ user: { id, name, email: lower, role: "customer" } });
   res.cookies.set(COOKIE_NAME, token, authCookieOptions(60 * 60 * 24 * 7));
   return res;

@@ -2,8 +2,8 @@ import Link from "next/link";
 import ProductCard from "@/components/ProductCard";
 import db from "@/lib/db";
 
-export default function SweatshirtsSection() {
-  const items = db.prepare("SELECT * FROM products WHERE category = 'sweatshirts' ORDER BY createdAt DESC").all() as any[];
+export default async function SweatshirtsSection() {
+  const items = await db.prepare("SELECT * FROM products WHERE category = 'sweatshirts' ORDER BY createdAt DESC").all() as any[];
   if (items.length === 0) return null;
 
   return (

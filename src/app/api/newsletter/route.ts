@@ -15,10 +15,8 @@ export async function POST(req: NextRequest) {
   }
   const { email } = body;
   if (!isEmail(email)) return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
-  try {
-    db.prepare("INSERT INTO subscribers (id, email) VALUES (?, ?)").run(crypto.randomUUID(), email.toLowerCase());
-    return NextResponse.json({ success: true });
-  } catch {
-    return NextResponse.json({ success: true, message: "Already subscribed" });
-  }
+  const result = await db.prepare("INSERT INTO subscribers (id, email) VALUES (?, ?) ON CONFLICT(email) DO NOTHING").run(crypto.randomUUID(), email.toLowerCase());
+  return result.changes > 0
+    ? NextResponse.json({ success: true })
+    : NextResponse.json({ success: true, message: "Already subscribed" });
 }

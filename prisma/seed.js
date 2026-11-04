@@ -1,6 +1,7 @@
 const Database = require("better-sqlite3");
 const bcrypt = require("bcryptjs");
 const path = require("path");
+const { emailLookup, encryptSensitiveData } = require("../src/lib/sensitive-data.js");
 
 const dbPath = path.join(process.cwd(), "prisma", "dev.db");
 const db = new Database(dbPath);
@@ -10,6 +11,7 @@ db.exec(`
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
+    email_lookup TEXT,
     password TEXT NOT NULL,
     role TEXT DEFAULT 'customer',
     createdAt TEXT DEFAULT (datetime('now'))
@@ -61,6 +63,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS subscribers (
     id TEXT PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
+    email_lookup TEXT,
     createdAt TEXT DEFAULT (datetime('now'))
   );
   CREATE TABLE IF NOT EXISTS blog_posts (
@@ -115,6 +118,15 @@ db.exec(`
   );
 `);
 
+const hasColumn = (table, name) =>
+  db.prepare(`PRAGMA table_info(${table})`).all().some(column => column.name === name);
+if (!hasColumn("users", "email_lookup")) db.exec("ALTER TABLE users ADD COLUMN email_lookup TEXT");
+if (!hasColumn("subscribers", "email_lookup")) db.exec("ALTER TABLE subscribers ADD COLUMN email_lookup TEXT");
+db.exec(`
+  CREATE UNIQUE INDEX IF NOT EXISTS users_email_lookup_unique ON users (email_lookup);
+  CREATE UNIQUE INDEX IF NOT EXISTS subscribers_email_lookup_unique ON subscribers (email_lookup);
+`);
+
 const upsert = (table, cols, row) => {
   const placeholders = cols.map(() => "?").join(",");
   const sql = `INSERT OR REPLACE INTO ${table} (${cols.join(",")}) VALUES (${placeholders})`;
@@ -135,16 +147,18 @@ function getSeedAdminPassword() {
 
 // Admin user — only created if missing; never overwrites an existing admin
 const adminEmail = "admin@kstyles.com";
-const existingAdmin = db.prepare("SELECT * FROM users WHERE email = ?").get(adminEmail);
+const existingAdmin = db.prepare("SELECT * FROM users WHERE email_lookup = ? OR email = ?")
+  .get(emailLookup(adminEmail, "users"), adminEmail);
 if (!existingAdmin) {
   const adminPassword = getSeedAdminPassword();
   upsert(
     "users",
-    ["id", "name", "email", "password", "role"],
+    ["id", "name", "email", "email_lookup", "password", "role"],
     {
       id: "admin-1",
-      name: "Admin",
-      email: adminEmail,
+      name: encryptSensitiveData("Admin"),
+      email: encryptSensitiveData(adminEmail),
+      email_lookup: emailLookup(adminEmail, "users"),
       password: bcrypt.hashSync(adminPassword, 10),
       role: "admin",
     }

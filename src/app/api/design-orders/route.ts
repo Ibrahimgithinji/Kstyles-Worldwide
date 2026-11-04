@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import db from "@/lib/db";
+import db, { withDatabaseContext } from "@/lib/db";
 import { isEmail, isStringLen, isPositiveNumber } from "@/lib/validate";
 import { readJson, errorResponse } from "@/lib/body";
 import { clientIp, checkRateLimit } from "@/lib/rate-limit";
 import { isSameOriginRequest } from "@/lib/auth";
+import { encryptSensitiveData } from "@/lib/encryption";
 
 export async function POST(req: NextRequest) {
   if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const ip = clientIp(req);
-  const limit = checkRateLimit(`design-order:${ip}`);
+  const limit = await checkRateLimit(`design-order:${ip}`);
   if (!limit.allowed) {
     return NextResponse.json({ error: `Too many requests. Try again in ${limit.retryAfterSeconds}s.` }, { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } });
   }
@@ -33,15 +34,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid order details" }, { status: 400 });
   }
 
-  const design = db.prepare("SELECT * FROM designs WHERE id = ? AND active = 1").get(designId) as any;
+  const design = await db.prepare("SELECT * FROM designs WHERE id = ? AND active = 1").get(designId) as any;
   if (!design) return NextResponse.json({ error: "Design not found" }, { status: 404 });
   let sizePrices: Record<string, number> = {};
   try { sizePrices = JSON.parse(design.sizePrices || "{}"); } catch { /* ignore */ }
   const unitPrice = typeof sizePrices[size] === "number" && sizePrices[size] > 0 ? sizePrices[size] : design.price;
 
   const id = crypto.randomUUID();
-  db.prepare("INSERT INTO design_orders (id, designId, designName, size, price, quantity, fabric, color, dimensions, notes, customerName, email, phone, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')")
-    .run(id, design.id, design.name, size, unitPrice, Number(quantity), String(fabric ?? "").slice(0, 100), String(color ?? "").slice(0, 100), String(dimensions ?? "").slice(0, 200), String(notes ?? "").slice(0, 2000), customerName, email.toLowerCase(), String(phone ?? "").slice(0, 20));
+  await withDatabaseContext({ role: "public" }, () =>
+    db.prepare("INSERT INTO design_orders (id, designId, designName, size, price, quantity, fabric, color, dimensions, notes, customerName, email, phone, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')")
+      .run(id, design.id, design.name, size, unitPrice, Number(quantity), String(fabric ?? "").slice(0, 100), String(color ?? "").slice(0, 100), encryptSensitiveData(String(dimensions ?? "").slice(0, 200)), encryptSensitiveData(String(notes ?? "").slice(0, 2000)), encryptSensitiveData(customerName), encryptSensitiveData(email.toLowerCase()), encryptSensitiveData(String(phone ?? "").slice(0, 20))),
+  );
 
   return NextResponse.json({ id, designName: design.name, size, price: unitPrice, total: unitPrice * Number(quantity) });
 }

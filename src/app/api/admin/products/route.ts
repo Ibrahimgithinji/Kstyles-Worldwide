@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser, isSameOriginRequest } from "@/lib/auth";
-import db from "@/lib/db";
+import db, { withDatabaseContext } from "@/lib/db";
 import { isStringLen, isPositiveNumber, isSafeUrl } from "@/lib/validate";
 import { readJson, errorResponse } from "@/lib/body";
 import { logAdminAction } from "@/lib/db";
@@ -8,15 +8,17 @@ import { logAdminAction } from "@/lib/db";
 const CATEGORIES = ["tops", "bottoms", "outerwear", "accessories"];
 
 export async function GET(req: NextRequest) {
-  const user = getAuthUser(req);
+  const user = await getAuthUser(req);
   if (!user || user.role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const products = db.prepare("SELECT * FROM products ORDER BY createdAt DESC").all() as any[];
+  const products = await withDatabaseContext({ userId: user.id, role: "admin" }, () =>
+    db.prepare("SELECT * FROM products ORDER BY createdAt DESC").all(),
+  ) as any[];
   return NextResponse.json({ products });
 }
 
 export async function POST(req: NextRequest) {
   if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  const user = getAuthUser(req);
+  const user = await getAuthUser(req);
   if (!user || user.role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   let body: any;
   try {
@@ -33,8 +35,10 @@ export async function POST(req: NextRequest) {
   if (image && !isSafeUrl(image)) return NextResponse.json({ error: "Invalid image URL" }, { status: 400 });
 
   const id = crypto.randomUUID();
-  db.prepare("INSERT INTO products (id, name, slug, description, price, category, sizes, colors, image, featured) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-    .run(id, name, slug, description || "", price, category || "", String(sizes || "S,M,L,XL").slice(0, 200), String(colors || "Black").slice(0, 200), image || "", featured ? 1 : 0);
-  logAdminAction(user.id, user.email, "product.create", id, `name=${name} price=${price}`);
+  await withDatabaseContext({ userId: user.id, role: "admin" }, async () => {
+    await db.prepare("INSERT INTO products (id, name, slug, description, price, category, sizes, colors, image, featured) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+      .run(id, name, slug, description || "", price, category || "", String(sizes || "S,M,L,XL").slice(0, 200), String(colors || "Black").slice(0, 200), image || "", featured ? 1 : 0);
+    await logAdminAction(user.id, user.email, "product.create", id, `name=${name} price=${price}`);
+  });
   return NextResponse.json({ id });
 }

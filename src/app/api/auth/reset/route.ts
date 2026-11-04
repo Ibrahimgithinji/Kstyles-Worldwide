@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "node:crypto";
-import db from "@/lib/db";
+import db, { withDatabaseContext } from "@/lib/db";
 import { verifyResetToken } from "@/lib/auth";
 import { hashPassword } from "@/lib/password";
 import { clientIp, checkRateLimit } from "@/lib/rate-limit";
@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const ip = clientIp(req);
-  const limit = checkRateLimit(`reset:${ip}`);
+  const limit = await checkRateLimit(`reset:${ip}`);
   if (!limit.allowed) {
     return NextResponse.json(
       { error: `Too many attempts. Try again in ${Math.ceil(limit.retryAfterSeconds / 60)} minutes.` },
@@ -38,11 +38,13 @@ export async function POST(req: NextRequest) {
 
   const hash = await hashPassword(password);
   const tokenHash = createHash("sha256").update(token).digest("hex");
-  const result = db.prepare(`
-    UPDATE users
-    SET password = ?, password_changed_at = ?, reset_token_hash = NULL, reset_token_expires_at = NULL
-    WHERE id = ? AND reset_token_hash = ? AND reset_token_expires_at > ?
-  `).run(hash, Math.floor(Date.now() / 1000), userId, tokenHash, Date.now());
+  const result = await withDatabaseContext({ role: "auth" }, () =>
+    db.prepare(`
+      UPDATE users
+      SET password = ?, password_changed_at = ?, reset_token_hash = NULL, reset_token_expires_at = NULL
+      WHERE id = ? AND reset_token_hash = ? AND reset_token_expires_at > ?
+    `).run(hash, Math.floor(Date.now() / 1000), userId, tokenHash, Date.now()),
+  );
   if (result.changes === 0) {
     return NextResponse.json({ error: "Invalid or expired reset link" }, { status: 400 });
   }

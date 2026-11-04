@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser, isSameOriginRequest } from "@/lib/auth";
 import db, { logAdminAction, withDatabaseContext } from "@/lib/db";
 import { readJson, errorResponse } from "@/lib/body";
+import { decryptSensitiveData } from "@/lib/encryption";
 
 const ORDER_STATUSES = ["pending", "paid", "shipped", "delivered", "cancelled"];
 
@@ -12,7 +13,17 @@ export async function GET(req: NextRequest) {
     const orders = await db.prepare("SELECT * FROM orders ORDER BY createdAt DESC").all() as any[];
     return Promise.all(orders.map(async (order: any) => {
       const items = await db.prepare("SELECT * FROM order_items WHERE orderId = ?").all(order.id) as any[];
-      return { ...order, items };
+      return {
+        ...order,
+        email: decryptSensitiveData(order.email),
+        firstName: decryptSensitiveData(order.firstName),
+        lastName: decryptSensitiveData(order.lastName),
+        address: decryptSensitiveData(order.address),
+        city: decryptSensitiveData(order.city),
+        zip: decryptSensitiveData(order.zip),
+        country: decryptSensitiveData(order.country),
+        items,
+      };
     }));
   });
   return NextResponse.json({ orders: withItems });

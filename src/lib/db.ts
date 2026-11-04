@@ -3,6 +3,7 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import Database from "better-sqlite3";
 import { Pool, type PoolClient } from "pg";
 import path from "path";
+import { assertEncryptionKeyConfigured, encryptSensitiveData } from "@/lib/encryption";
 
 export type DatabaseRole = "public" | "auth" | "customer" | "admin" | "system";
 export interface DatabaseContext {
@@ -28,6 +29,9 @@ const isProductionBuild = process.env.NEXT_PHASE === "phase-production-build";
 if (process.env.NODE_ENV === "production" && !databaseUrl && !isProductionBuild) {
   throw new Error("DATABASE_URL is required in production.");
 }
+if (process.env.NODE_ENV === "production" && !isProductionBuild) {
+  assertEncryptionKeyConfigured();
+}
 
 const pool = databaseUrl
   ? new Pool({
@@ -51,6 +55,7 @@ if (sqlite) {
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
       email TEXT UNIQUE NOT NULL,
+      email_lookup TEXT,
       password TEXT NOT NULL,
       role TEXT DEFAULT 'customer',
       createdAt TEXT DEFAULT (datetime('now')),
@@ -117,6 +122,7 @@ if (sqlite) {
     CREATE TABLE IF NOT EXISTS subscribers (
       id TEXT PRIMARY KEY,
       email TEXT UNIQUE NOT NULL,
+      email_lookup TEXT,
       createdAt TEXT DEFAULT (datetime('now'))
     );
     CREATE TABLE IF NOT EXISTS rate_limit_buckets (
@@ -174,9 +180,13 @@ if (sqlite) {
   if (!hasColumn("order_items", "image")) sqlite.exec("ALTER TABLE order_items ADD COLUMN image TEXT DEFAULT ''");
   if (!hasColumn("design_orders", "phone")) sqlite.exec("ALTER TABLE design_orders ADD COLUMN phone TEXT DEFAULT ''");
   if (!hasColumn("users", "password_changed_at")) sqlite.exec("ALTER TABLE users ADD COLUMN password_changed_at INTEGER NOT NULL DEFAULT 0");
+  if (!hasColumn("users", "email_lookup")) sqlite.exec("ALTER TABLE users ADD COLUMN email_lookup TEXT");
+  if (!hasColumn("subscribers", "email_lookup")) sqlite.exec("ALTER TABLE subscribers ADD COLUMN email_lookup TEXT");
   if (!hasColumn("users", "reset_token_hash")) sqlite.exec("ALTER TABLE users ADD COLUMN reset_token_hash TEXT");
   if (!hasColumn("users", "reset_token_expires_at")) sqlite.exec("ALTER TABLE users ADD COLUMN reset_token_expires_at INTEGER");
   if (!hasColumn("designs", "category")) sqlite.exec("ALTER TABLE designs ADD COLUMN category TEXT DEFAULT ''");
+  sqlite.exec("CREATE UNIQUE INDEX IF NOT EXISTS users_email_lookup_unique ON users (email_lookup)");
+  sqlite.exec("CREATE UNIQUE INDEX IF NOT EXISTS subscribers_email_lookup_unique ON subscribers (email_lookup)");
 }
 
 const fieldNames: Record<string, string> = {
@@ -317,7 +327,7 @@ export async function logAdminAction(
   await withDatabaseContext({ userId: adminId, role: "admin" }, () =>
     db.prepare(
       "INSERT INTO admin_audit (id, adminId, adminEmail, action, target, details) VALUES (?, ?, ?, ?, ?, ?)",
-    ).run(crypto.randomUUID(), adminId, adminEmail, action, target, String(details).slice(0, 500)),
+    ).run(crypto.randomUUID(), adminId, encryptSensitiveData(adminEmail), action, target, String(details).slice(0, 500)),
   );
 }
 

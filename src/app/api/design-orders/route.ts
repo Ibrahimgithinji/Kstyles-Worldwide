@@ -4,6 +4,7 @@ import { isEmail, isStringLen, isPositiveNumber } from "@/lib/validate";
 import { readJson, errorResponse } from "@/lib/body";
 import { clientIp, checkRateLimit } from "@/lib/rate-limit";
 import { isSameOriginRequest } from "@/lib/auth";
+import { encryptSensitiveData } from "@/lib/encryption";
 
 export async function POST(req: NextRequest) {
   if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -42,7 +43,7 @@ export async function POST(req: NextRequest) {
   const id = crypto.randomUUID();
   await withDatabaseContext({ role: "public" }, () =>
     db.prepare("INSERT INTO design_orders (id, designId, designName, size, price, quantity, fabric, color, dimensions, notes, customerName, email, phone, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')")
-      .run(id, design.id, design.name, size, unitPrice, Number(quantity), String(fabric ?? "").slice(0, 100), String(color ?? "").slice(0, 100), String(dimensions ?? "").slice(0, 200), String(notes ?? "").slice(0, 2000), customerName, email.toLowerCase(), String(phone ?? "").slice(0, 20)),
+      .run(id, design.id, design.name, size, unitPrice, Number(quantity), String(fabric ?? "").slice(0, 100), String(color ?? "").slice(0, 100), encryptSensitiveData(String(dimensions ?? "").slice(0, 200)), encryptSensitiveData(String(notes ?? "").slice(0, 2000)), encryptSensitiveData(customerName), encryptSensitiveData(email.toLowerCase()), encryptSensitiveData(String(phone ?? "").slice(0, 20))),
   );
 
   return NextResponse.json({ id, designName: design.name, size, price: unitPrice, total: unitPrice * Number(quantity) });

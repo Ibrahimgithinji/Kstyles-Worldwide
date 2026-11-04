@@ -7,6 +7,7 @@ import { isEmail } from "@/lib/validate";
 import { readJson, errorResponse } from "@/lib/body";
 import { appUrl, assertEmailConfigured, EmailConfigurationError, sendEmail } from "@/lib/email";
 import { isSameOriginRequest } from "@/lib/auth";
+import { decryptSensitiveData, emailLookup } from "@/lib/encryption";
 
 function escapeHtml(value: string) {
   return value.replace(/[&<>"']/g, char => ({
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest) {
   }
 
   const lower = email.toLowerCase();
-  const emailLimit = await checkRateLimit(`forgot-email:${lower}`);
+  const emailLimit = await checkRateLimit(`forgot-email:${emailLookup(lower, "forgot-rate-limit")}`);
   if (!emailLimit.allowed) {
     return NextResponse.json(
       { error: `Too many requests for this email. Try again in ${Math.ceil(emailLimit.retryAfterSeconds / 60)} minutes.` },
@@ -62,9 +63,10 @@ export async function POST(req: NextRequest) {
   }
 
   const user = await withDatabaseContext({ role: "auth" }, () =>
-    db.prepare("SELECT id, name FROM users WHERE email = ?").get(lower),
+    db.prepare("SELECT id, name FROM users WHERE email_lookup = ?").get(emailLookup(lower, "users")),
   ) as { id: string; name: string } | undefined;
   if (user) {
+    user.name = decryptSensitiveData(user.name);
     const token = signResetToken(user.id);
     const tokenHash = createHash("sha256").update(token).digest("hex");
     await withDatabaseContext({ role: "auth" }, () =>

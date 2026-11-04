@@ -5,6 +5,7 @@ import { readJson, errorResponse } from "@/lib/body";
 import { clientIp, checkRateLimit } from "@/lib/rate-limit";
 import { getAuthUser, isSameOriginRequest } from "@/lib/auth";
 import { withDatabaseTransaction } from "@/lib/db";
+import { encryptSensitiveData } from "@/lib/encryption";
 
 export async function POST(req: NextRequest) {
   if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest) {
   const id = crypto.randomUUID();
   await withDatabaseTransaction(context, async () => {
     await db.prepare("INSERT INTO orders (id, userId, email, firstName, lastName, address, city, zip, country, total, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')")
-      .run(id, user?.id ?? null, String(email).slice(0, 254), String(firstName).slice(0, 80), String(lastName).slice(0, 80), String(address).slice(0, 200), String(city).slice(0, 80), String(zip).slice(0, 20), String(country).slice(0, 80), total);
+      .run(id, user?.id ?? null, encryptSensitiveData(String(email).slice(0, 254)), encryptSensitiveData(String(firstName).slice(0, 80)), encryptSensitiveData(String(lastName).slice(0, 80)), encryptSensitiveData(String(address).slice(0, 200)), encryptSensitiveData(String(city).slice(0, 80)), encryptSensitiveData(String(zip).slice(0, 20)), encryptSensitiveData(String(country).slice(0, 80)), total);
     for (const row of rows) {
       row[1] = id;
       await insert.run(...row);

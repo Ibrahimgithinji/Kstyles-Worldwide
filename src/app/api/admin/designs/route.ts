@@ -3,13 +3,21 @@ import { getAuthUser, isSameOriginRequest } from "@/lib/auth";
 import db, { logAdminAction, DESIGN_STATUSES, withDatabaseContext } from "@/lib/db";
 import { readJson, errorResponse } from "@/lib/body";
 import { isStringLen, isPositiveNumber, isSafeUrl } from "@/lib/validate";
+import { decryptSensitiveData } from "@/lib/encryption";
 
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req);
   if (!user || user.role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { designs, orders } = await withDatabaseContext({ userId: user.id, role: "admin" }, async () => ({
     designs: await db.prepare("SELECT * FROM designs ORDER BY createdAt DESC").all(),
-    orders: await db.prepare("SELECT * FROM design_orders ORDER BY createdAt DESC").all(),
+    orders: (await db.prepare("SELECT * FROM design_orders ORDER BY createdAt DESC").all() as any[]).map(order => ({
+      ...order,
+      dimensions: decryptSensitiveData(order.dimensions),
+      notes: decryptSensitiveData(order.notes),
+      customerName: decryptSensitiveData(order.customerName),
+      email: decryptSensitiveData(order.email),
+      phone: decryptSensitiveData(order.phone),
+    })),
   }));
   return NextResponse.json({ designs, orders });
 }

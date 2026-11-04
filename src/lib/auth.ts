@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import { NextRequest } from "next/server";
 import crypto from "crypto";
 import db, { withDatabaseContext } from "@/lib/db";
+import { decryptSensitiveData } from "@/lib/encryption";
 
 // Random per-boot secret for environments without JWT_SECRET (dev only).
 // Never reuse across restarts; production requires JWT_SECRET explicitly.
@@ -29,12 +30,12 @@ function getSecret(): string {
 }
 
 export function signToken(payload: { id: string; email: string; role: string }) {
-  return jwt.sign(payload, getSecret(), { expiresIn: "7d" });
+  return jwt.sign({ id: payload.id, role: payload.role }, getSecret(), { expiresIn: "7d" });
 }
 
 export function verifyToken(token: string) {
   try {
-    return jwt.verify(token, getSecret()) as { id: string; email: string; role: string; purpose?: string; iat?: number };
+    return jwt.verify(token, getSecret()) as { id: string; email?: string; role: string; purpose?: string; iat?: number };
   } catch {
     return null;
   }
@@ -88,14 +89,14 @@ export function isSameOriginRequest(req: NextRequest): boolean {
   }
 }
 
-async function getFreshSession(user: { id: string; email: string; iat?: number; role: string }) {
+async function getFreshSession(user: { id: string; email?: string; iat?: number; role: string }) {
   const row = await withDatabaseContext(
     { userId: user.id, role: user.role === "admin" ? "admin" : "customer" },
-    () => db.prepare("SELECT role, password_changed_at FROM users WHERE id = ?").get(user.id),
-  ) as { role: string; password_changed_at?: number } | undefined;
+    () => db.prepare("SELECT role, email, password_changed_at FROM users WHERE id = ?").get(user.id),
+  ) as { role: string; email: string; password_changed_at?: number } | undefined;
   if (!row) return null;
   if ((user.iat ?? 0) < (row.password_changed_at || 0)) return null;
-  return { ...user, role: row.role };
+  return { ...user, email: decryptSensitiveData(row.email), role: row.role };
 }
 
 export const RESET_TOKEN_EXPIRY_SECONDS = 60 * 30;

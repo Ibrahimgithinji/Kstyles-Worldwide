@@ -4,6 +4,7 @@ import { isEmail, isStringLen } from "@/lib/validate";
 import { readJson, errorResponse } from "@/lib/body";
 import { clientIp, checkRateLimit } from "@/lib/rate-limit";
 import { isSameOriginRequest } from "@/lib/auth";
+import { encryptSensitiveData } from "@/lib/encryption";
 
 export async function POST(req: NextRequest) {
   if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -26,6 +27,7 @@ export async function POST(req: NextRequest) {
   if (!isStringLen(message, 5, 5000)) return NextResponse.json({ error: "Message must be 5-5000 characters" }, { status: 400 });
 
   const id = crypto.randomUUID();
-  await db.prepare("INSERT INTO contacts (id, firstName, lastName, email, message) VALUES (?, ?, ?, ?, ?)").run(id, firstName, lastName, email.toLowerCase(), message);
+  await db.prepare("INSERT INTO contacts (id, firstName, lastName, email, message) VALUES (?, ?, ?, ?, ?)")
+    .run(id, encryptSensitiveData(firstName), encryptSensitiveData(lastName), encryptSensitiveData(email.toLowerCase()), encryptSensitiveData(message));
   return NextResponse.json({ success: true, id });
 }

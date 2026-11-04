@@ -1,10 +1,26 @@
 const Database = require("better-sqlite3");
 const { Client } = require("pg");
 const path = require("path");
+const {
+  assertEncryptionKeyConfigured,
+  decryptSensitiveData,
+  emailLookup,
+  encryptSensitiveData,
+} = require("../src/lib/sensitive-data.js");
+
+const SENSITIVE_COLUMNS = {
+  users: new Set(["name", "email"]),
+  orders: new Set(["email", "firstname", "lastname", "address", "city", "zip", "country"]),
+  design_orders: new Set(["dimensions", "notes", "customername", "email", "phone"]),
+  contacts: new Set(["firstname", "lastname", "email", "message"]),
+  subscribers: new Set(["email"]),
+  admin_audit: new Set(["adminemail"]),
+};
+const EMAIL_LOOKUP_TABLES = new Set(["users", "subscribers"]);
 
 const TABLES = {
   users: [
-    ["id", "id"], ["name", "name"], ["email", "email"], ["password", "password"],
+    ["id", "id"], ["name", "name"], ["email", "email"], ["email_lookup", "email_lookup"], ["password", "password"],
     ["role", "role"], ["createdAt", "createdat"],
     ["password_changed_at", "password_changed_at"], ["reset_token_hash", "reset_token_hash"],
     ["reset_token_expires_at", "reset_token_expires_at"],
@@ -45,7 +61,7 @@ const TABLES = {
     ["message", "message"], ["createdAt", "createdat"],
   ],
   subscribers: [
-    ["id", "id"], ["email", "email"], ["createdAt", "createdat"],
+    ["id", "id"], ["email", "email"], ["email_lookup", "email_lookup"], ["createdAt", "createdat"],
   ],
   rate_limit_buckets: [
     ["key", "key"], ["timestamps", "timestamps"], ["failures", "failures"],
@@ -58,6 +74,7 @@ const TABLES = {
 };
 
 async function main() {
+  assertEncryptionKeyConfigured();
   const migrationUrl = process.env.SUPABASE_MIGRATION_DATABASE_URL;
   if (!migrationUrl) {
     throw new Error("SUPABASE_MIGRATION_DATABASE_URL is required for the one-time data import.");
@@ -85,12 +102,22 @@ async function main() {
       }
 
       const sourceRows = source.prepare(`SELECT * FROM "${table}"`).all();
-      const importableColumns = columns.filter(([sourceColumn]) =>
-        sourceRows.length === 0 || Object.hasOwn(sourceRows[0], sourceColumn),
+      const importableColumns = columns.filter(([sourceColumn, targetColumn]) =>
+        targetColumn === "email_lookup" && EMAIL_LOOKUP_TABLES.has(table)
+          ? true
+          : sourceRows.length === 0 || Object.hasOwn(sourceRows[0], sourceColumn),
       );
 
       for (const row of sourceRows) {
-        const values = importableColumns.map(([sourceColumn]) => row[sourceColumn]);
+        const values = importableColumns.map(([sourceColumn, targetColumn]) => {
+          if (targetColumn === "email_lookup" && EMAIL_LOOKUP_TABLES.has(table)) {
+            return emailLookup(decryptSensitiveData(row.email), table);
+          }
+          const value = row[sourceColumn];
+          return SENSITIVE_COLUMNS[table]?.has(sourceColumn.toLowerCase())
+            ? encryptSensitiveData(decryptSensitiveData(value))
+            : value;
+        });
         const placeholders = values.map((_, index) => `$${index + 1}`).join(", ");
         const targetColumns = importableColumns.map(([, targetColumn]) => targetColumn).join(", ");
         await target.query(

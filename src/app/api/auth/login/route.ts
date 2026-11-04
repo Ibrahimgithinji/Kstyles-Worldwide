@@ -4,7 +4,8 @@ import { signToken, authCookieOptions, COOKIE_NAME, isSameOriginRequest } from "
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { clientIp, checkRateLimit, recordFailure, resetRateLimit } from "@/lib/rate-limit";
 import { isEmail, isPassword } from "@/lib/validate";
-import { readJson, HttpError, errorResponse } from "@/lib/body";
+import { readJson, errorResponse } from "@/lib/body";
+import { decryptSensitiveData, emailLookup } from "@/lib/encryption";
 
 const DUMMY_PASSWORD_HASH = "$2b$10$7R/941SHdmY6OeTfi.z6Bub7OpBl80MieeFhcS8ly135BuZQRahgO";
 
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
   }
 
   const user = await withDatabaseContext({ role: "auth" }, () =>
-    db.prepare("SELECT * FROM users WHERE email = ?").get(email.toLowerCase()),
+    db.prepare("SELECT * FROM users WHERE email_lookup = ?").get(emailLookup(email, "users")),
   ) as any;
   const verification = await verifyPassword(password, user?.password ?? DUMMY_PASSWORD_HASH);
   if (!user || !verification.valid) {
@@ -41,6 +42,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }
 
+  user.name = decryptSensitiveData(user.name);
+  user.email = decryptSensitiveData(user.email);
   const token = signToken({ id: user.id, email: user.email, role: user.role });
   if (verification.needsRehash) {
     const updatedPassword = await hashPassword(password);

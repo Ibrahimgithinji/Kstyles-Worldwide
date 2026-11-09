@@ -1,5 +1,14 @@
+import { cookies } from "next/headers";
 import Link from "next/link";
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+import { redirect } from "next/navigation";
+import { COOKIE_NAME, getAuthUserFromToken } from "@/lib/auth";
+
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const token = (await cookies()).get(COOKIE_NAME)?.value;
+  const user = token ? await getAuthUserFromToken(token) : null;
+  if (!user) redirect("/auth/login");
+  if (user.role !== "admin") redirect("/");
+
   const links = [
     { href: "/admin", label: "Dashboard" },
     { href: "/admin/products", label: "Products" },

@@ -44,21 +44,17 @@ export function verifyToken(token: string) {
 export async function getAuthUser(req: NextRequest) {
   const auth = req.headers.get("authorization");
   if (auth && auth.startsWith("Bearer ")) {
-    const user = verifyToken(auth.slice(7));
-    if (user && !user.purpose) {
-      const freshUser = await getFreshSession(user);
-      if (freshUser) return freshUser;
-    }
+    const user = await getAuthUserFromToken(auth.slice(7));
+    if (user) return user;
   }
   const cookie = req.cookies.get(COOKIE_NAME)?.value;
-  if (cookie) {
-    const user = verifyToken(cookie);
-    if (user && !user.purpose) {
-      const freshUser = await getFreshSession(user);
-      if (freshUser) return freshUser;
-    }
-  }
-  return null;
+  return cookie ? getAuthUserFromToken(cookie) : null;
+}
+
+export async function getAuthUserFromToken(token: string) {
+  const user = verifyToken(token);
+  if (!user || user.purpose) return null;
+  return getFreshSession(user);
 }
 
 export function isSameOriginRequest(req: NextRequest): boolean {

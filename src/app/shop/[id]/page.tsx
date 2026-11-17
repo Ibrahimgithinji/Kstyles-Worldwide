@@ -3,8 +3,9 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { formatPrice } from "@/lib/utils";
+import { formatKesPrice } from "@/lib/utils";
 import { addToCart } from "@/lib/cart";
+import type { ProductVariant } from "@/lib/catalog";
 
 interface Product {
   id: string;
@@ -15,6 +16,8 @@ interface Product {
   price: number;
   sizes: string;
   colors: string;
+  optionLabel: string;
+  variants: ProductVariant[];
 }
 
 type ProductState =
@@ -42,7 +45,19 @@ function isProduct(value: unknown): value is Product {
     "sizes" in value &&
     typeof value.sizes === "string" &&
     "colors" in value &&
-    typeof value.colors === "string"
+    typeof value.colors === "string" &&
+    "optionLabel" in value &&
+    typeof value.optionLabel === "string" &&
+    "variants" in value &&
+    Array.isArray(value.variants) &&
+    value.variants.every(variant =>
+      typeof variant === "object" &&
+      variant !== null &&
+      "label" in variant &&
+      typeof variant.label === "string" &&
+      "image" in variant &&
+      typeof variant.image === "string",
+    )
   );
 }
 
@@ -78,7 +93,7 @@ export default function ProductDetail() {
         if (active) {
           setProductState({ status: "ready", id, product: data.product });
           setSize(data.product.sizes.split(",")[0]);
-          setColor(data.product.colors.split(",")[0]);
+          setColor(data.product.variants[0]?.label ?? data.product.colors.split(",")[0] ?? "");
         }
       } catch {
         if (active) setProductState({ status: "error", id });
@@ -121,44 +136,53 @@ export default function ProductDetail() {
   }
 
   const sizes: string[] = p.sizes.split(",");
-  const colors: string[] = p.colors.split(",");
-  const colorClassMap: Record<string, string> = {
-    Black: "bg-black",
-    White: "bg-white",
-    Cream: "bg-[#f5f5dc]",
-    Olive: "bg-[#556b2f]",
-    Khaki: "bg-[#c3b091]",
-    Grey: "bg-[#808080]",
-    Navy: "bg-[#000080]",
-    Charcoal: "bg-[#36454f]",
-    Indigo: "bg-[#3f51b5]",
-    Brown: "bg-[#8b4513]",
+  const selectedVariant = p.variants.find(variant => variant.label === color) ?? p.variants[0];
+  const categoryLabels: Record<string, string> = {
+    headwear: "Headwear",
+    hoodies: "Hoodies",
+    jerseys: "Jerseys",
+    tees: "Tees",
   };
   return (
     <div className="pt-24 pb-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid gap-12 md:grid-cols-2">
-          <div className="aspect-[3/4] overflow-hidden border border-[#2a2a2a] bg-[#111]">
-            {p.image ? <Image src={p.image} alt={p.name} width={800} height={1067} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center"><span className="text-9xl font-bold text-[#2a2a2a]">{p.name[0]}</span></div>}
+          <div>
+            <div className="aspect-[4/3] overflow-hidden border border-[#2a2a2a] bg-[#111]">
+              {selectedVariant?.image ? <Image src={selectedVariant.image} alt={`${p.name} - ${selectedVariant.label}`} width={1200} height={900} className="h-full w-full object-contain p-2" /> : <div className="flex h-full items-center justify-center"><span className="text-9xl font-bold text-[#2a2a2a]">{p.name[0]}</span></div>}
+            </div>
+            {p.variants.length > 1 && (
+              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {p.variants.map(variant => (
+                  <button
+                    key={variant.label}
+                    type="button"
+                    aria-pressed={color === variant.label}
+                    onClick={() => setColor(variant.label)}
+                    className={`overflow-hidden rounded-md border text-left transition-colors ${color === variant.label ? "border-[#d4af37]" : "border-[#2a2a2a] hover:border-[#555]"}`}
+                  >
+                    <span className="block aspect-[4/3] bg-[#111]">
+                      <Image src={variant.image} alt="" width={300} height={225} className="h-full w-full object-contain p-1" />
+                    </span>
+                    <span className="block px-2 py-2 text-xs text-white">{variant.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div>
-            <p className="text-xs uppercase tracking-widest text-[#a0a0a0]">{p.category}</p>
+            <p className="text-xs uppercase tracking-widest text-[#a0a0a0]">{categoryLabels[p.category] ?? p.category}</p>
             <h1 className="mt-2 text-3xl font-bold text-white">{p.name}</h1>
-            <p className="mt-4 text-2xl text-[#d4af37]">{formatPrice(p.price)}</p>
+            <p className="mt-4 text-2xl text-[#d4af37]">{formatKesPrice(p.price)}</p>
             <p className="mt-6 text-[#a0a0a0] leading-relaxed">{p.description}</p>
+            {p.variants.length === 1 && <p className="mt-4 text-sm text-[#a0a0a0]">{p.optionLabel}: {p.variants[0].label}</p>}
             <div className="mt-8">
               <p className="text-sm font-semibold uppercase tracking-widest text-white">Size: {size}</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {sizes.map(s => <button key={s} onClick={() => setSize(s)} className={`rounded-md border px-4 py-2 text-sm transition-colors ${size === s ? "border-[#d4af37] bg-[#d4af37] text-black" : "border-[#2a2a2a] text-white hover:border-[#d4af37]"}`}>{s}</button>)}
               </div>
             </div>
-            <div className="mt-8">
-              <p className="text-sm font-semibold uppercase tracking-widest text-white">Color: {color}</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {colors.map(c => <button key={c} onClick={() => setColor(c)} className={`h-8 w-8 rounded-full border transition-all ${color === c ? "ring-2 ring-[#d4af37] ring-offset-2 ring-offset-black" : "border-[#2a2a2a]"} ${colorClassMap[c] || "bg-[#d4af37]"}`} title={c} />)}
-              </div>
-            </div>
-            <button onClick={() => { addToCart({ productId: p.id, name: p.name, price: p.price, image: p.image ?? "", size, color, quantity: 1 }); router.push("/cart"); }} className="mt-10 w-full rounded-md bg-[#d4af37] py-3 text-sm font-semibold uppercase tracking-widest text-black hover:bg-[#b8960f] transition-colors">Add to Cart</button>
+            <button onClick={() => { addToCart({ productId: p.id, name: p.name, price: p.price, image: selectedVariant?.image ?? p.image ?? "", size, color, optionLabel: p.optionLabel, quantity: 1 }); router.push("/cart"); }} className="mt-10 w-full rounded-md bg-[#d4af37] py-3 text-sm font-semibold uppercase tracking-widest text-black hover:bg-[#b8960f] transition-colors">Add to Cart</button>
           </div>
         </div>
       </div>

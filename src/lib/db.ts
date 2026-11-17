@@ -87,6 +87,7 @@ if (sqlite) {
       country TEXT NOT NULL,
       status TEXT DEFAULT 'pending',
       total REAL NOT NULL,
+      currency TEXT NOT NULL DEFAULT 'USD',
       createdAt TEXT DEFAULT (datetime('now'))
     );
     CREATE TABLE IF NOT EXISTS order_items (
@@ -176,6 +177,7 @@ if (sqlite) {
   const columns = (table: string) =>
     sqlite!.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
   const hasColumn = (table: string, name: string) => columns(table).some(column => column.name === name);
+  if (!hasColumn("orders", "currency")) sqlite.exec("ALTER TABLE orders ADD COLUMN currency TEXT NOT NULL DEFAULT 'USD'");
   if (!hasColumn("order_items", "name")) sqlite.exec("ALTER TABLE order_items ADD COLUMN name TEXT DEFAULT ''");
   if (!hasColumn("order_items", "image")) sqlite.exec("ALTER TABLE order_items ADD COLUMN image TEXT DEFAULT ''");
   if (!hasColumn("design_orders", "phone")) sqlite.exec("ALTER TABLE design_orders ADD COLUMN phone TEXT DEFAULT ''");

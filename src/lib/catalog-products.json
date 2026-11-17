@@ -1,0 +1,128 @@
+[
+  {
+    "id": "catalog-hoodies-heavy-fabric",
+    "name": "Hoodies (Heavy fabric)",
+    "slug": "hoodies-heavy-fabric",
+    "description": "Heavy fabric",
+    "price": 3000,
+    "category": "hoodies",
+    "sizes": ["S", "M", "L", "XL"],
+    "optionLabel": "Color",
+    "featured": true,
+    "variants": [
+      { "label": "White", "image": "/images/products/hoodie-white.webp" },
+      { "label": "Black", "image": "/images/products/hoodie-black.webp" },
+      { "label": "Red", "image": "/images/products/hoodie-red.webp" }
+    ]
+  },
+  {
+    "id": "catalog-custom-vest-jersey",
+    "name": "Kstyles Custom Vest Jersey",
+    "slug": "kstyles-custom-vest-jersey",
+    "description": "Kstyles Custom Vest Jersey",
+    "price": 1800,
+    "category": "jerseys",
+    "sizes": ["S", "M", "L", "XL"],
+    "optionLabel": "Color",
+    "featured": true,
+    "variants": [
+      { "label": "White / Black", "image": "/images/products/custom-vest-jersey.webp" }
+    ]
+  },
+  {
+    "id": "catalog-custom-crop-jersey",
+    "name": "Kstyles Custom Crop Jersey",
+    "slug": "kstyles-custom-crop-jersey",
+    "description": "Kstyles Custom Crop Jersey",
+    "price": 1800,
+    "category": "jerseys",
+    "sizes": ["S", "M", "L", "XL"],
+    "optionLabel": "Color",
+    "featured": false,
+    "variants": [
+      { "label": "Red / Black", "image": "/images/products/custom-crop-jersey.webp" }
+    ]
+  },
+  {
+    "id": "catalog-custom-bucket-hat",
+    "name": "Kstyles Custom Bucket Hat",
+    "slug": "kstyles-custom-bucket-hat",
+    "description": "Kstyles Custom Bucket Hat",
+    "price": 1200,
+    "category": "headwear",
+    "sizes": ["One Size"],
+    "optionLabel": "Color",
+    "featured": true,
+    "variants": [
+      { "label": "Red", "image": "/images/products/bucket-hat-red.webp" },
+      { "label": "Black / Charcoal", "image": "/images/products/bucket-hat-black.webp" }
+    ]
+  },
+  {
+    "id": "catalog-tees-shirts",
+    "name": "Tees (Shirts)",
+    "slug": "tees-shirts",
+    "description": "Tees (Shirts)",
+    "price": 1500,
+    "category": "tees",
+    "sizes": ["S", "M", "L", "XL"],
+    "optionLabel": "Design",
+    "featured": true,
+    "variants": [
+      { "label": "Warembo", "image": "/images/products/tee-warembo.webp" },
+      { "label": "Kill God (Black)", "image": "/images/products/tee-kill-god.webp" },
+      { "label": "Worldwide Money", "image": "/images/products/tee-kstyles-money.webp" },
+      { "label": "Pretty Girls", "image": "/images/products/tee-pretty-girls.webp" },
+      { "label": "Mind of a Hustler", "image": "/images/products/tee-hustler.webp" },
+      { "label": "Kill God (Color)", "image": "/images/products/tee-kill-god-yellow.webp" },
+      { "label": "Where Money Talks", "image": "/images/products/tee-money-talks.webp" },
+      { "label": "Today / Tomorrow / Forever", "image": "/images/products/tee-today-tomorrow.webp" }
+    ]
+  },
+  {
+    "id": "catalog-new-era-caps",
+    "name": "New era caps",
+    "slug": "new-era-caps",
+    "description": "New era caps",
+    "price": 1000,
+    "category": "headwear",
+    "sizes": ["One Size"],
+    "optionLabel": "Design",
+    "featured": true,
+    "variants": [
+      { "label": "Worldwide Logo", "image": "/images/products/cap-worldwide-logo.webp" },
+      { "label": "JS Monogram", "image": "/images/products/cap-js-monogram.webp" },
+      { "label": "JS Styles", "image": "/images/products/cap-js-styles.webp" },
+      { "label": "KS / JS Logo", "image": "/images/products/cap-ks-js-logo.webp" },
+      { "label": "Kstyles Logo", "image": "/images/products/cap-kstyles-logo.webp" }
+    ]
+  },
+  {
+    "id": "catalog-reflective-tees",
+    "name": "Reflective Tees",
+    "slug": "reflective-tees",
+    "description": "Reflective Tees",
+    "price": 2000,
+    "category": "tees",
+    "sizes": ["S", "M", "L", "XL"],
+    "optionLabel": "Color",
+    "featured": false,
+    "variants": [
+      { "label": "White", "image": "/images/products/tee-reflective-white.webp" }
+    ]
+  },
+  {
+    "id": "catalog-glow-in-the-dark-tees",
+    "name": "Glow in the Dark Tees",
+    "slug": "glow-in-the-dark-tees",
+    "description": "Glow in the dark Tees",
+    "price": 2000,
+    "category": "tees",
+    "sizes": ["S", "M", "L", "XL"],
+    "optionLabel": "Color",
+    "featured": false,
+    "variants": [
+      { "label": "Black", "image": "/images/products/tee-glow-black.webp" }
+    ]
+  }
+]

@@ -9,6 +9,17 @@ export function formatPrice(price: number) {
   }).format(price);
 }
 
+export function formatKesPrice(price: number) {
+  return `KES ${new Intl.NumberFormat("en-KE", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(price)}`;
+}
+
+export function formatOrderPrice(price: number, currency: string) {
+  return currency === "KES" ? formatKesPrice(price) : formatPrice(price);
+}
+
 export function slugify(text: string) {
   return text.toLowerCase().replace(/\s+/g, "-").replace(/[^\w-]+/g, "");
 }

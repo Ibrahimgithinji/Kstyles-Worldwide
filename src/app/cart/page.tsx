@@ -2,10 +2,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { getCart, updateQuantity, removeFromCart, cartTotal } from "@/lib/cart";
-import { formatPrice } from "@/lib/utils";
+import { getCart, updateQuantity, removeFromCart, cartTotal, type CartItem } from "@/lib/cart";
+import { formatKesPrice } from "@/lib/utils";
 export default function CartPage() {
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState<CartItem[]>([]);
   useEffect(() => { setItems(getCart()); }, []);
   const total = cartTotal(items);
   if (items.length === 0) return (
@@ -21,20 +21,20 @@ export default function CartPage() {
         <h1 className="text-3xl font-bold text-white">Your Cart</h1>
         <div className="mt-8 grid gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
-            {items.map((item, i) => (
-              <div key={i} className="flex gap-6 border-b border-[#2a2a2a] pb-6">
+            {items.map(item => (
+              <div key={`${item.productId}:${item.size}:${item.color}:${item.image}`} className="flex gap-6 border-b border-[#2a2a2a] pb-6">
                 <div className="h-24 w-24 flex-shrink-0 overflow-hidden border border-[#2a2a2a] bg-[#111]">
                   {item.image ? <Image src={item.image} alt={item.name} width={96} height={128} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center"><span className="text-2xl font-bold text-[#2a2a2a]">{item.name[0]}</span></div>}
                 </div>
                 <div className="flex-1">
                   <h3 className="text-sm font-semibold text-white">{item.name}</h3>
-                  <p className="mt-1 text-xs text-[#a0a0a0]">{item.size} / {item.color}</p>
-                  <p className="mt-1 text-sm text-[#d4af37]">{formatPrice(item.price)}</p>
+                  <p className="mt-1 text-xs text-[#a0a0a0]">{item.size} / {item.optionLabel || "Color"}: {item.color}</p>
+                  <p className="mt-1 text-sm text-[#d4af37]">{formatKesPrice(item.price)}</p>
                   <div className="mt-2 flex items-center gap-2">
-                    <button onClick={() => { updateQuantity(item.productId, item.size, item.color, item.quantity - 1); setItems(getCart()); }} className="h-10 w-10 rounded border border-[#2a2a2a] text-white">-</button>
+                    <button onClick={() => { updateQuantity(item.productId, item.size, item.color, item.image, item.quantity - 1); setItems(getCart()); }} className="h-10 w-10 rounded border border-[#2a2a2a] text-white">-</button>
                     <span className="w-8 text-center text-sm text-white">{item.quantity}</span>
-                    <button onClick={() => { updateQuantity(item.productId, item.size, item.color, item.quantity + 1); setItems(getCart()); }} className="h-10 w-10 rounded border border-[#2a2a2a] text-white">+</button>
-                    <button onClick={() => { removeFromCart(item.productId, item.size, item.color); setItems(getCart()); }} className="ml-4 text-xs uppercase tracking-widest text-[#a0a0a0] hover:text-red-500">Remove</button>
+                    <button onClick={() => { updateQuantity(item.productId, item.size, item.color, item.image, item.quantity + 1); setItems(getCart()); }} className="h-10 w-10 rounded border border-[#2a2a2a] text-white">+</button>
+                    <button onClick={() => { removeFromCart(item.productId, item.size, item.color, item.image); setItems(getCart()); }} className="ml-4 text-xs uppercase tracking-widest text-[#a0a0a0] hover:text-red-500">Remove</button>
                   </div>
                 </div>
               </div>
@@ -44,9 +44,9 @@ export default function CartPage() {
             <h3 className="text-lg font-semibold text-white">Order Summary</h3>
             <div className="mt-4 space-y-2 text-sm">
               <div className="flex justify-between text-[#a0a0a0]"><span>Items</span><span>{items.reduce((s, i) => s + i.quantity, 0)}</span></div>
-              <div className="flex justify-between text-[#a0a0a0]"><span>Subtotal</span><span>{formatPrice(total)}</span></div>
+              <div className="flex justify-between text-[#a0a0a0]"><span>Subtotal</span><span>{formatKesPrice(total)}</span></div>
               <div className="flex justify-between text-[#a0a0a0]"><span>Shipping</span><span>Free</span></div>
-              <div className="border-t border-[#2a2a2a] pt-2 flex justify-between text-white font-semibold"><span>Total</span><span>{formatPrice(total)}</span></div>
+              <div className="border-t border-[#2a2a2a] pt-2 flex justify-between text-white font-semibold"><span>Total</span><span>{formatKesPrice(total)}</span></div>
             </div>
             <Link href="/checkout" className="mt-6 block w-full rounded-md bg-[#d4af37] py-3 text-center text-sm font-semibold uppercase tracking-widest text-black hover:bg-[#b8960f] transition-colors">Checkout</Link>
           </div>

@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getAuthHeaders } from "@/lib/auth-client";
-import { formatPrice } from "@/lib/utils";
+import { formatKesPrice } from "@/lib/utils";
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [auth, setAuth] = useState<"loading" | "ok" | "denied">("loading");
@@ -94,7 +94,7 @@ export default function AdminProductsPage() {
               <input id="file-image-input" type="file" accept="image/*" className="hidden" onChange={e => handleUpload(e.target.files?.[0] ?? null)} />
               <input id="file-image-url" type="text" value={form.image} onChange={e => setForm({ ...form, image: e.target.value })} placeholder=".or paste image URL" className="mt-2 w-full rounded-md border border-[#2a2a2a] bg-black px-4 py-2 text-xs text-white focus:border-[#d4af37] focus:outline-none" />
             </div>
-            <div><label className="block text-sm font-semibold text-white">Category</label><select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} className="mt-1 w-full rounded-md border border-[#2a2a2a] bg-black px-4 py-2 text-sm text-white focus:border-[#d4af37] focus:outline-none"><option>tops</option><option>bottoms</option><option>outerwear</option><option>accessories</option></select></div>
+            <div><label className="block text-sm font-semibold text-white">Category</label><select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} className="mt-1 w-full rounded-md border border-[#2a2a2a] bg-black px-4 py-2 text-sm text-white focus:border-[#d4af37] focus:outline-none"><option>hoodies</option><option>jerseys</option><option>tees</option><option>headwear</option><option>tops</option><option>bottoms</option><option>outerwear</option><option>accessories</option></select></div>
             <div><label className="block text-sm font-semibold text-white">Sizes (comma)</label><input value={form.sizes} onChange={e => setForm({ ...form, sizes: e.target.value })} className="mt-1 w-full rounded-md border border-[#2a2a2a] bg-black px-4 py-2 text-sm text-white focus:border-[#d4af37] focus:outline-none" /></div>
           </div>
           <label className="flex items-center gap-2 text-sm text-white"><input type="checkbox" checked={form.featured} onChange={e => setForm({ ...form, featured: e.target.checked })} /> Featured</label>
@@ -115,7 +115,7 @@ export default function AdminProductsPage() {
                     <span>{p.name}</span>
                   </div>
                 </td>
-                <td className="py-3 pr-4">{formatPrice(p.price)}</td>
+                <td className="py-3 pr-4">{formatKesPrice(p.price)}</td>
                 <td className="py-3 pr-4">{p.category}</td>
                 <td className="py-3 pr-4">{p.featured ? "Yes" : "No"}</td>
                 <td className="py-3"><button onClick={() => del(p.id)} className="text-red-400 hover:text-red-300">Delete</button></td>

@@ -2,6 +2,7 @@ const Database = require("better-sqlite3");
 const bcrypt = require("bcryptjs");
 const path = require("path");
 const { emailLookup, encryptSensitiveData } = require("../src/lib/sensitive-data.js");
+const catalogProducts = require("../src/lib/catalog-products.json");
 
 const dbPath = path.join(process.cwd(), "prisma", "dev.db");
 const db = new Database(dbPath);
@@ -41,6 +42,7 @@ db.exec(`
     country TEXT NOT NULL,
     status TEXT DEFAULT 'pending',
     total REAL NOT NULL,
+    currency TEXT NOT NULL DEFAULT 'USD',
     createdAt TEXT DEFAULT (datetime('now'))
   );
   CREATE TABLE IF NOT EXISTS order_items (
@@ -122,6 +124,7 @@ const hasColumn = (table, name) =>
   db.prepare(`PRAGMA table_info(${table})`).all().some(column => column.name === name);
 if (!hasColumn("users", "email_lookup")) db.exec("ALTER TABLE users ADD COLUMN email_lookup TEXT");
 if (!hasColumn("subscribers", "email_lookup")) db.exec("ALTER TABLE subscribers ADD COLUMN email_lookup TEXT");
+if (!hasColumn("orders", "currency")) db.exec("ALTER TABLE orders ADD COLUMN currency TEXT NOT NULL DEFAULT 'USD'");
 db.exec(`
   CREATE UNIQUE INDEX IF NOT EXISTS users_email_lookup_unique ON users (email_lookup);
   CREATE UNIQUE INDEX IF NOT EXISTS subscribers_email_lookup_unique ON subscribers (email_lookup);
@@ -168,82 +171,47 @@ if (!existingAdmin) {
   console.log("Admin user already exists — password left unchanged.");
 }
 
-// Products
-const products = [
-  {
-    id: ID(1), name: "Oversized Denim Jacket", slug: "oversized-denim-jacket",
-    description: "Premium oversized denim jacket with gold-toned hardware. Crafted from heavyweight Japanese denim for durability and style.",
-    price: 289, image: "https://images.unsplash.com/photo-1549277513-f1b32fe1f8f5?auto=format&fit=crop&w=900&q=80",
-    category: "outerwear", sizes: "S,M,L,XL", colors: "Indigo,Black", featured: 1,
-  },
-  {
-    id: ID(2), name: "Signature Hoodie", slug: "signature-hoodie",
-    description: "Heavyweight cotton hoodie with embroidered Kstyles logo. Fleece-lined for maximum comfort.",
-    price: 149, image: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&w=900&q=80",
-    category: "tops", sizes: "S,M,L,XL,XXL", colors: "Black,Cream,Olive", featured: 1,
-  },
-  {
-    id: ID(3), name: "Cargo Pants", slug: "cargo-pants",
-    description: "Modern cargo pants with a tailored fit. Features multiple pockets and adjustable cuffs.",
-    price: 179, image: "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?auto=format&fit=crop&w=900&q=80",
-    category: "bottoms", sizes: "28,30,32,34,36", colors: "Black,Khaki,Grey", featured: 1,
-  },
-  {
-    id: ID(4), name: "Leather Bomber Jacket", slug: "leather-bomber-jacket",
-    description: "Genuine leather bomber jacket with satin lining. A timeless piece with a modern edge.",
-    price: 459, image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=900&q=80",
-    category: "outerwear", sizes: "S,M,L,XL", colors: "Black,Brown", featured: 1,
-  },
-  {
-    id: ID(5), name: "Graphic Tee", slug: "graphic-tee",
-    description: "100% organic cotton tee with signature Kstyles graphic print. Pre-shrunk for lasting fit.",
-    price: 69, image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80",
-    category: "tops", sizes: "S,M,L,XL,XXL", colors: "Black,White", featured: 0,
-  },
-  {
-    id: ID(6), name: "Wide Leg Trousers", slug: "wide-leg-trousers",
-    description: "Wide leg trousers in premium wool-blend fabric. Perfect for elevated streetwear looks.",
-    price: 219, image: "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?auto=format&fit=crop&w=900&q=80",
-    category: "bottoms", sizes: "28,30,32,34,36", colors: "Black,Navy,Charcoal", featured: 0,
-  },
-  {
-    id: ID(7), name: "K Styles Jersey", slug: "k-styles-jersey",
-    description: "Signature K Styles jersey — premium performance fabric with the classic K branding. Made to order.",
-    price: 1899, image: "/images/designs/jersey-1.png",
-    category: "jerseys", sizes: "S,M,L,XL,XXL", colors: "Black", featured: 1,
-  },
-  {
-    id: ID(8), name: "K Styles Custom Jersey", slug: "k-styles-custom-jersey",
-    description: "Fully custom K Styles jersey — your name and number, tailored fit, top-grade material.",
-    price: 2399, image: "/images/designs/jersey-2.png",
-    category: "jerseys", sizes: "S,M,L,XL,XXL", colors: "Black", featured: 1,
-  },
-  {
-    id: ID(9), name: "K Styles Signature Jersey", slug: "k-styles-signature-jersey",
-    description: "The limited Signature edition jersey. Bold branding, heavyweight knit, made for the stands.",
-    price: 2099, image: "/images/designs/jersey-3.png",
-    category: "jerseys", sizes: "S,M,L,XL,XXL", colors: "Black", featured: 1,
-  },
-  {
-    id: ID(10), name: "Orange Crystal Sweatshirt", slug: "orange-crystal-sweatshirt",
-    description: "Heavyweight sweatshirt embellished with bright orange crystal detailing across the chest. A bold statement piece, made to order.",
-    price: 2499, image: "https://images.unsplash.com/photo-1578681994506-b8f463449011?auto=format&fit=crop&w=900&q=80",
-    category: "sweatshirts", sizes: "S,M,L,XL,XXL", colors: "Black,Orange", featured: 1,
-  },
-  {
-    id: ID(11), name: "Crystal Statement Crewneck", slug: "crystal-statement-crewneck",
-    description: "Crewneck with hand-set orange crystals tracing the K Styles monogram. Premium fleece, standout shine.",
-    price: 2799, image: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&w=900&q=80",
-    category: "sweatshirts", sizes: "S,M,L,XL,XXL", colors: "Black", featured: 1,
-  },
-  {
-    id: ID(12), name: "Crystal Luxe Pullover", slug: "crystal-luxe-pullover",
-    description: "Luxury pullover dusted with bright orange crystals from shoulder to cuff. Made for evenings that demand attention.",
-    price: 2999, image: "https://images.unsplash.com/photo-1578768079052-aa76e52ff62e?auto=format&fit=crop&w=900&q=80",
-    category: "sweatshirts", sizes: "S,M,L,XL", colors: "Black,Orange", featured: 1,
-  },
+// Replace only the original sample listings; order-item snapshots remain intact.
+const legacyProductSlugs = [
+  "oversized-denim-jacket", "signature-hoodie", "cargo-pants", "leather-bomber-jacket",
+  "graphic-tee", "wide-leg-trousers", "k-styles-jersey", "k-styles-custom-jersey",
+  "k-styles-signature-jersey", "orange-crystal-sweatshirt", "crystal-statement-crewneck",
+  "crystal-luxe-pullover",
 ];
-for (const p of products) upsert("products", Object.keys(p), p);
+const deleteLegacyProducts = db.prepare(
+  `DELETE FROM products WHERE slug IN (${legacyProductSlugs.map(() => "?").join(",")})`,
+);
+const saveCatalogProduct = db.prepare(`
+  INSERT INTO products (id, name, slug, description, price, image, category, sizes, colors, featured)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  ON CONFLICT(id) DO UPDATE SET
+    name = excluded.name,
+    slug = excluded.slug,
+    description = excluded.description,
+    price = excluded.price,
+    image = excluded.image,
+    category = excluded.category,
+    sizes = excluded.sizes,
+    colors = excluded.colors,
+    featured = excluded.featured
+`);
+db.transaction(() => {
+  deleteLegacyProducts.run(...legacyProductSlugs);
+  for (const product of catalogProducts) {
+    saveCatalogProduct.run(
+      product.id,
+      product.name,
+      product.slug,
+      product.description,
+      product.price,
+      product.variants[0].image,
+      product.category,
+      product.sizes.join(","),
+      product.variants.map(variant => variant.label).join(","),
+      product.featured ? 1 : 0,
+    );
+  }
+})();
 
 // Blog posts
 const blogPosts = [

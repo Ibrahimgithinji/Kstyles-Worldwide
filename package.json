@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "seed": "node --env-file=.env prisma/seed.js",
+    "db:sync-catalog": "node scripts/sync-catalog-products.js",
     "db:migrate-data": "node --env-file=.env scripts/migrate-sqlite-to-postgres.js",
     "db:encrypt-sensitive-data": "node --env-file=.env scripts/encrypt-sensitive-data.js"
   },

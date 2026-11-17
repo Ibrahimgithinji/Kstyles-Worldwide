@@ -1,12 +1,12 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getCart, clearCart } from "@/lib/cart";
-import { formatPrice } from "@/lib/utils";
+import { getCart, clearCart, type CartItem } from "@/lib/cart";
+import { formatKesPrice } from "@/lib/utils";
 const COUNTRIES = ["Kenya", "United States", "United Kingdom", "Canada", "Australia", "Germany", "France", "Italy", "Spain", "Netherlands", "Belgium", "Switzerland", "Austria", "Sweden", "Norway", "Denmark", "Finland", "Ireland", "Portugal", "Poland", "UAE", "Saudi Arabia", "Qatar", "Kuwait", "South Africa", "Nigeria", "Ghana", "Tanzania", "Uganda", "Rwanda", "Ethiopia", "Egypt", "Morocco", "India", "China", "Japan", "South Korea", "Singapore", "Malaysia", "Brazil", "Mexico", "Argentina", "Jamaica", "New Zealand"];
 export default function CheckoutPage() {
   const router = useRouter();
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState<CartItem[]>([]);
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", address: "", city: "", zip: "", country: "United States" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -27,7 +27,7 @@ export default function CheckoutPage() {
       if (!res.ok) { setError(data.error || "Order failed"); return; }
       setConfirmedTotal(data.total);
       clearCart();
-      alert("Order placed successfully! Order ID: " + data.id.slice(0, 8) + " — Total: " + formatPrice(data.total));
+      alert("Order placed successfully! Order ID: " + data.id.slice(0, 8) + " — Total: " + formatKesPrice(data.total));
       router.push("/");
     } catch { setError("Something went wrong"); }
     finally { setLoading(false); }
@@ -59,13 +59,13 @@ export default function CheckoutPage() {
             <h3 className="text-lg font-semibold text-white">Order Summary</h3>
             <div className="mt-4 space-y-3">
               {items.map((p, i) => (
-                <div key={i} className="flex gap-4"><div className="h-16 w-16 flex-shrink-0 overflow-hidden border border-[#2a2a2a] bg-black">{p.image ? <img src={p.image} alt={p.name} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center"><span className="font-bold text-[#2a2a2a]">{p.name[0]}</span></div>}</div><div><p className="text-sm text-white">{p.name} &times; {p.quantity}</p><p className="text-sm text-[#d4af37]">{formatPrice(p.price)}</p></div></div>
+                <div key={i} className="flex gap-4"><div className="h-16 w-16 flex-shrink-0 overflow-hidden border border-[#2a2a2a] bg-black">{p.image ? <img src={p.image} alt={p.name} className="h-full w-full object-contain" /> : <div className="flex h-full items-center justify-center"><span className="font-bold text-[#2a2a2a]">{p.name[0]}</span></div>}</div><div><p className="text-sm text-white">{p.name} &times; {p.quantity}</p><p className="text-xs text-[#a0a0a0]">{p.size} / {p.optionLabel || "Color"}: {p.color}</p><p className="text-sm text-[#d4af37]">{formatKesPrice(p.price)}</p></div></div>
               ))}
             </div>
             <div className="mt-6 space-y-2 border-t border-[#2a2a2a] pt-4 text-sm">
-              <div className="flex justify-between text-[#a0a0a0]"><span>Subtotal</span><span>{formatPrice(displayTotal)}</span></div>
+              <div className="flex justify-between text-[#a0a0a0]"><span>Subtotal</span><span>{formatKesPrice(displayTotal)}</span></div>
               <div className="flex justify-between text-[#a0a0a0]"><span>Shipping</span><span>Free</span></div>
-              <div className="flex justify-between text-white font-semibold"><span>Total</span><span>{formatPrice(confirmedTotal ?? displayTotal)}</span></div>
+              <div className="flex justify-between text-white font-semibold"><span>Total</span><span>{formatKesPrice(confirmedTotal ?? displayTotal)}</span></div>
             </div>
           </div>
         </div>

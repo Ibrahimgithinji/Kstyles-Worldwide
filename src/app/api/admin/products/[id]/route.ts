@@ -5,7 +5,7 @@ import { isStringLen, isPositiveNumber, isSafeUrl } from "@/lib/validate";
 import { readJson, errorResponse } from "@/lib/body";
 import { logAdminAction } from "@/lib/db";
 
-const CATEGORIES = ["tops", "bottoms", "outerwear", "accessories"];
+const CATEGORIES = ["tops", "bottoms", "outerwear", "accessories", "hoodies", "jerseys", "headwear", "tees"];
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });

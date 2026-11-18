@@ -5,7 +5,7 @@ import { isStringLen, isPositiveNumber, isSafeUrl } from "@/lib/validate";
 import { readJson, errorResponse } from "@/lib/body";
 import { logAdminAction } from "@/lib/db";
 
-const CATEGORIES = ["tops", "bottoms", "outerwear", "accessories"];
+const CATEGORIES = ["tops", "bottoms", "outerwear", "accessories", "hoodies", "jerseys", "headwear", "tees"];
 
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req);

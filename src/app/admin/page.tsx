@@ -2,10 +2,18 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getAuthHeaders } from "@/lib/auth-client";
-import { formatPrice } from "@/lib/utils";
+import { formatKesPrice, formatOrderPrice, formatPrice } from "@/lib/utils";
+interface OrderSummary {
+  id: string;
+  firstName: string;
+  lastName: string;
+  status: string;
+  total: number;
+  currency: string;
+}
 export default function AdminDashboard() {
-  const [orders, setOrders] = useState<any[]>([]);
-  const [products, setProducts] = useState<any[]>([]);
+  const [orders, setOrders] = useState<OrderSummary[]>([]);
+  const [products, setProducts] = useState<unknown[]>([]);
   const [auth, setAuth] = useState<"loading" | "ok" | "denied">("loading");
   useEffect(() => {
     const check = async () => {
@@ -27,11 +35,14 @@ export default function AdminDashboard() {
       <Link href="/auth/login" className="mt-6 rounded-md bg-[#d4af37] px-6 py-3 text-sm font-semibold uppercase tracking-widest text-black hover:bg-[#b8960f] transition-colors">Sign In</Link>
     </div>
   );
-  const revenue = orders.filter(o => o.status !== "cancelled").reduce((s, o) => s + o.total, 0);
+  const completedOrders = orders.filter(o => o.status !== "cancelled");
+  const kesRevenue = completedOrders.filter(o => o.currency === "KES").reduce((sum, order) => sum + order.total, 0);
+  const usdRevenue = completedOrders.filter(o => o.currency !== "KES").reduce((sum, order) => sum + order.total, 0);
   const stats = [
     { label: "Total Products", value: String(products.length) },
     { label: "Total Orders", value: String(orders.length) },
-    { label: "Revenue", value: formatPrice(revenue) },
+    { label: "Revenue (KES)", value: formatKesPrice(kesRevenue) },
+    ...(usdRevenue > 0 ? [{ label: "Historical Revenue (USD)", value: formatPrice(usdRevenue) }] : []),
     { label: "Pending Orders", value: String(orders.filter(o => o.status === "pending").length) },
   ];
   return (
@@ -56,7 +67,7 @@ export default function AdminDashboard() {
                 </thead>
                 <tbody className="text-white">
                   {orders.slice(0, 5).map(o => (
-                    <tr key={o.id} className="border-b border-[#2a2a2a]"><td className="py-3 pr-4">{o.id.slice(0, 8)}</td><td className="py-3 pr-4">{o.firstName} {o.lastName}</td><td className="py-3 pr-4 text-[#d4af37]">{o.status}</td><td className="py-3">{formatPrice(o.total)}</td></tr>
+                    <tr key={o.id} className="border-b border-[#2a2a2a]"><td className="py-3 pr-4">{o.id.slice(0, 8)}</td><td className="py-3 pr-4">{o.firstName} {o.lastName}</td><td className="py-3 pr-4 text-[#d4af37]">{o.status}</td><td className="py-3">{formatOrderPrice(o.total, o.currency)}</td></tr>
                   ))}
                 </tbody>
               </table>

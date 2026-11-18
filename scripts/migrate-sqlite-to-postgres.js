@@ -43,7 +43,8 @@ const TABLES = {
   orders: [
     ["id", "id"], ["userId", "userid"], ["email", "email"], ["firstName", "firstname"],
     ["lastName", "lastname"], ["address", "address"], ["city", "city"], ["zip", "zip"],
-    ["country", "country"], ["status", "status"], ["total", "total"], ["createdAt", "createdat"],
+    ["country", "country"], ["status", "status"], ["total", "total"], ["currency", "currency"],
+    ["createdAt", "createdat"],
   ],
   order_items: [
     ["id", "id"], ["orderId", "orderid"], ["productId", "productid"], ["name", "name"],

@@ -2,10 +2,10 @@
 import { useEffect, useState } from "react";
 import { getAuthHeaders } from "@/lib/auth-client";
 import Link from "next/link";
-import { formatPrice } from "@/lib/utils";
+import { formatOrderPrice } from "@/lib/utils";
 
 interface OrderItem { id: string; name: string; quantity: number; size: string; color: string; price: number; image: string; }
-interface Order { id: string; firstName: string; lastName: string; email: string; status: string; total: number; createdAt: string; items: OrderItem[]; }
+interface Order { id: string; firstName: string; lastName: string; email: string; status: string; total: number; currency: string; createdAt: string; items: OrderItem[]; }
 
 const ORDER_STATUSES = ["pending", "paid", "shipped", "delivered", "cancelled"];
 
@@ -68,7 +68,7 @@ function OrderRow({ order, onStatus }: { order: Order; onStatus: (s: string) => 
             {ORDER_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </td>
-        <td className="py-3 pr-4">{formatPrice(order.total)}</td>
+        <td className="py-3 pr-4">{formatOrderPrice(order.total, order.currency)}</td>
         <td className="py-3 text-[#a0a0a0]">{order.createdAt}</td>
       </tr>
       <tr className="border-b border-[#2a2a2a] bg-[#111]">
@@ -85,7 +85,7 @@ function OrderRow({ order, onStatus }: { order: Order; onStatus: (s: string) => 
                   <div className="min-w-0">
                     <p className="truncate font-medium text-white">{it.name}</p>
                     <p className="text-xs text-[#a0a0a0]">{it.size}{it.color ? ` · ${it.color}` : ""} · ×{it.quantity}</p>
-                    <p className="text-xs text-[#d4af37]">{formatPrice(it.price * it.quantity)}</p>
+                    <p className="text-xs text-[#d4af37]">{formatOrderPrice(it.price * it.quantity, order.currency)}</p>
                   </div>
                 </div>
               ))}

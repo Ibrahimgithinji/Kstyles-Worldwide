@@ -6,6 +6,7 @@ import { clientIp, checkRateLimit } from "@/lib/rate-limit";
 import { getAuthUser, isSameOriginRequest } from "@/lib/auth";
 import { withDatabaseTransaction } from "@/lib/db";
 import { encryptSensitiveData } from "@/lib/encryption";
+import { presentProduct, type ProductRecord } from "@/lib/catalog";
 
 export async function POST(req: NextRequest) {
   if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing or invalid items" }, { status: 400 });
   }
 
-  const lookups = db.prepare("SELECT id, name, price, image FROM products WHERE id = ?");
+  const lookups = db.prepare("SELECT id, name, slug, description, price, image, category, sizes, colors, featured FROM products WHERE id = ?");
   const insert = db.prepare("INSERT INTO order_items (id, orderId, productId, name, quantity, size, color, price, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
   let total = 0;
@@ -44,15 +45,24 @@ export async function POST(req: NextRequest) {
     if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99) {
       return NextResponse.json({ error: "Invalid quantity for item " + raw.productId }, { status: 400 });
     }
-    const product = await lookups.get(raw.productId) as any;
-    if (!product) {
+    const record = await lookups.get<ProductRecord>(raw.productId);
+    if (!record) {
       return NextResponse.json({ error: "Product not found" }, { status: 400 });
     }
-    const size = typeof raw.size === "string" ? raw.size.slice(0, 20) : "";
-    const color = typeof raw.color === "string" ? raw.color.slice(0, 40) : "";
+    const product = presentProduct(record);
+    const size = typeof raw.size === "string" ? raw.size : "";
+    const color = typeof raw.color === "string" ? raw.color : "";
+    if (!product.sizes.split(",").includes(size)) {
+      return NextResponse.json({ error: `Invalid size for ${product.name}` }, { status: 400 });
+    }
+    const variant = product.variants.find(option => option.label === color);
+    if (!variant) {
+      return NextResponse.json({ error: `Invalid ${product.optionLabel.toLowerCase()} for ${product.name}` }, { status: 400 });
+    }
     const price = Number(product.price);
     total += price * quantity;
-    rows.push([crypto.randomUUID(), null, product.id, product.name, quantity, size, color, price, product.image]);
+    const orderOption = product.optionLabel === "Design" ? `Design: ${color}` : color;
+    rows.push([crypto.randomUUID(), null, product.id, product.name, quantity, size, orderOption, price, variant.image]);
   }
 
   const user = await getAuthUser(req);
@@ -61,7 +71,7 @@ export async function POST(req: NextRequest) {
     : { role: "public" as const };
   const id = crypto.randomUUID();
   await withDatabaseTransaction(context, async () => {
-    await db.prepare("INSERT INTO orders (id, userId, email, firstName, lastName, address, city, zip, country, total, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')")
+    await db.prepare("INSERT INTO orders (id, userId, email, firstName, lastName, address, city, zip, country, total, currency, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'KES', 'pending')")
       .run(id, user?.id ?? null, encryptSensitiveData(String(email).slice(0, 254)), encryptSensitiveData(String(firstName).slice(0, 80)), encryptSensitiveData(String(lastName).slice(0, 80)), encryptSensitiveData(String(address).slice(0, 200)), encryptSensitiveData(String(city).slice(0, 80)), encryptSensitiveData(String(zip).slice(0, 20)), encryptSensitiveData(String(country).slice(0, 80)), total);
     for (const row of rows) {
       row[1] = id;

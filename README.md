@@ -56,6 +56,18 @@ The seed creates the initial admin account, products, collections, and blog post
 npm run seed
 ```
 
+The selected WhatsApp catalogue products and their photo options are defined in
+`src/lib/catalog-products.json`. To update only the local SQLite product list
+without changing accounts, orders, or other seed data, run:
+
+```bash
+npm run db:sync-catalog
+```
+
+For PostgreSQL, apply
+`supabase/migrations/202611180001_catalog_products.sql` after the initial schema.
+It replaces only the original sample product listings and preserves order history.
+
 The initial admin email is `admin@kstyles.com`; its password is the private
 `SEED_ADMIN_PASSWORD` value from `.env`. The seed will refuse to create an
 admin account if that value is missing or shorter than 12 characters.

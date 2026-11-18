@@ -1,8 +1,10 @@
 import Link from "next/link";
 import ProductCard from "@/components/ProductCard";
 import db from "@/lib/db";
-export default function FeaturedProducts() {
-  const featured = db.prepare("SELECT * FROM products WHERE featured = 1 ORDER BY createdAt DESC").all() as any[];
+import { presentProduct, type ProductRecord } from "@/lib/catalog";
+export default async function FeaturedProducts() {
+  const rows = await db.prepare("SELECT * FROM products WHERE featured = 1 ORDER BY createdAt DESC").all<ProductRecord>();
+  const featured = rows.map(presentProduct);
   return (
     <section className="py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -14,7 +16,7 @@ export default function FeaturedProducts() {
           <Link href="/shop" className="text-sm uppercase tracking-widest text-[#d4af37] hover:text-[#b8960f]">View All</Link>
         </div>
         <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          {featured.map((p: any) => <ProductCard key={p.id} product={p} />)}
+          {featured.map(p => <ProductCard key={p.id} product={p} />)}
         </div>
       </div>
     </section>

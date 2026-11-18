@@ -6,6 +6,7 @@ export interface CartItem {
   image: string;
   size: string;
   color: string;
+  optionLabel: string;
   quantity: number;
 }
 export function getCart(): CartItem[] {
@@ -19,18 +20,23 @@ export function saveCart(items: CartItem[]) {
 }
 export function addToCart(item: CartItem) {
   const cart = getCart();
-  const existing = cart.find(i => i.productId === item.productId && i.size === item.size && i.color === item.color);
+  const existing = cart.find(i =>
+    i.productId === item.productId &&
+    i.size === item.size &&
+    i.color === item.color &&
+    i.image === item.image,
+  );
   if (existing) existing.quantity += item.quantity;
   else cart.push(item);
   saveCart(cart);
 }
-export function updateQuantity(productId: string, size: string, color: string, quantity: number) {
+export function updateQuantity(productId: string, size: string, color: string, image: string, quantity: number) {
   const cart = getCart();
-  const item = cart.find(i => i.productId === productId && i.size === size && i.color === color);
-  if (item) { item.quantity = quantity; if (item.quantity <= 0) removeFromCart(productId, size, color); else saveCart(cart); }
+  const item = cart.find(i => i.productId === productId && i.size === size && i.color === color && i.image === image);
+  if (item) { item.quantity = quantity; if (item.quantity <= 0) removeFromCart(productId, size, color, image); else saveCart(cart); }
 }
-export function removeFromCart(productId: string, size: string, color: string) {
-  saveCart(getCart().filter(i => !(i.productId === productId && i.size === size && i.color === color)));
+export function removeFromCart(productId: string, size: string, color: string, image: string) {
+  saveCart(getCart().filter(i => !(i.productId === productId && i.size === size && i.color === color && i.image === image)));
 }
 export function clearCart() { saveCart([]); }
 export function cartTotal(cart: CartItem[]) {

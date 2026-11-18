@@ -143,7 +143,7 @@ export default function Header() {
                         <UserIcon /> Admin Dashboard
                       </Link>
                     )}
-                    <Link href="/" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-[#c9c9c9] transition-colors hover:bg-[#1a1a1a] hover:text-[#d4af37]">
+                    <Link href="/account" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-[#c9c9c9] transition-colors hover:bg-[#1a1a1a] hover:text-[#d4af37]">
                       <UserIcon /> My Account
                     </Link>
                     <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-red-400 transition-colors hover:bg-red-500/10">
@@ -177,6 +177,18 @@ export default function Header() {
               {l.label}
             </Link>
           ))}
+          {user && (
+            <>
+              <Link href="/account" onClick={() => setOpen(false)} className={`rounded-lg px-3 py-3 text-sm font-medium uppercase tracking-widest transition-colors ${isActive("/account") ? "bg-[#d4af37]/10 text-[#d4af37]" : "text-[#c9c9c9] hover:bg-white/5 hover:text-white"}`}>
+                My Account
+              </Link>
+              {user.role === "admin" && (
+                <Link href="/admin" onClick={() => setOpen(false)} className={`rounded-lg px-3 py-3 text-sm font-medium uppercase tracking-widest transition-colors ${isActive("/admin") ? "bg-[#d4af37]/10 text-[#d4af37]" : "text-[#c9c9c9] hover:bg-white/5 hover:text-white"}`}>
+                  Admin Dashboard
+                </Link>
+              )}
+            </>
+          )}
           {!user && (
             <Link href="/auth/login" onClick={() => setOpen(false)} className="mt-2 rounded-full bg-[#d4af37] px-6 py-3 text-center text-sm font-semibold uppercase tracking-widest text-black">
               Sign In

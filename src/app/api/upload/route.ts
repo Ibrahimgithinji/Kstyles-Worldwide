@@ -24,7 +24,7 @@ const extForType: Record<string, string> = { png: "png", jpeg: "jpg", gif: "gif"
 
 export async function POST(req: NextRequest) {
   if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  const user = getAuthUser(req);
+  const user = await getAuthUser(req);
   if (!user || user.role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   let requestBytes: Uint8Array<ArrayBuffer>;

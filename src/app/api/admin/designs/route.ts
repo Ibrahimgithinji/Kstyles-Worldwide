@@ -1,14 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser, isSameOriginRequest } from "@/lib/auth";
-import db, { logAdminAction, DESIGN_STATUSES } from "@/lib/db";
+import db, { logAdminAction, DESIGN_STATUSES, withDatabaseContext } from "@/lib/db";
 import { readJson, errorResponse } from "@/lib/body";
 import { isStringLen, isPositiveNumber, isSafeUrl } from "@/lib/validate";
+import { decryptSensitiveData } from "@/lib/encryption";
 
 export async function GET(req: NextRequest) {
-  const user = getAuthUser(req);
+  const user = await getAuthUser(req);
   if (!user || user.role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const designs = db.prepare("SELECT * FROM designs ORDER BY createdAt DESC").all();
-  const orders = db.prepare("SELECT * FROM design_orders ORDER BY createdAt DESC").all();
+  const { designs, orders } = await withDatabaseContext({ userId: user.id, role: "admin" }, async () => ({
+    designs: await db.prepare("SELECT * FROM designs ORDER BY createdAt DESC").all(),
+    orders: (await db.prepare("SELECT * FROM design_orders ORDER BY createdAt DESC").all() as any[]).map(order => ({
+      ...order,
+      dimensions: decryptSensitiveData(order.dimensions),
+      notes: decryptSensitiveData(order.notes),
+      customerName: decryptSensitiveData(order.customerName),
+      email: decryptSensitiveData(order.email),
+      phone: decryptSensitiveData(order.phone),
+    })),
+  }));
   return NextResponse.json({ designs, orders });
 }
 
@@ -26,7 +36,7 @@ function parseSizes(raw: unknown): Record<string, number> {
 
 export async function POST(req: NextRequest) {
   if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  const user = getAuthUser(req);
+  const user = await getAuthUser(req);
   if (!user || user.role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   let body: any;
   try {
@@ -48,19 +58,23 @@ export async function POST(req: NextRequest) {
     if (!isPositiveNumber(v) || v > 100000) return NextResponse.json({ error: `Invalid price for size ${k}` }, { status: 400 });
   }
 
-  const existing = db.prepare("SELECT id FROM designs WHERE slug = ?").get(slug);
+  const existing = await withDatabaseContext({ userId: user.id, role: "admin" }, () =>
+    db.prepare("SELECT id FROM designs WHERE slug = ?").get(slug),
+  );
   if (existing) return NextResponse.json({ error: "Slug already in use — choose another" }, { status: 409 });
 
   const id = crypto.randomUUID();
-  db.prepare("INSERT INTO designs (id, name, slug, description, price, sizePrices, image, category, tags, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-    .run(id, name, slug, description || "", price, JSON.stringify(parsedSizes), image || "", String(category ?? "").slice(0, 40), String(tags ?? "").slice(0, 200), active === false ? 0 : 1);
-  logAdminAction(user.id, user.email, "design.create", id, `name=${name} base=${price}`);
+  await withDatabaseContext({ userId: user.id, role: "admin" }, async () => {
+    await db.prepare("INSERT INTO designs (id, name, slug, description, price, sizePrices, image, category, tags, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+      .run(id, name, slug, description || "", price, JSON.stringify(parsedSizes), image || "", String(category ?? "").slice(0, 40), String(tags ?? "").slice(0, 200), active === false ? 0 : 1);
+    await logAdminAction(user.id, user.email, "design.create", id, `name=${name} base=${price}`);
+  });
   return NextResponse.json({ id });
 }
 
 export async function PUT(req: NextRequest) {
   if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  const user = getAuthUser(req);
+  const user = await getAuthUser(req);
   if (!user || user.role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   let body: any;
   try {
@@ -73,8 +87,10 @@ export async function PUT(req: NextRequest) {
   if (typeof status !== "string" || !(DESIGN_STATUSES as readonly string[]).includes(status)) {
     return NextResponse.json({ error: "Invalid status. Allowed: " + DESIGN_STATUSES.join(", ") }, { status: 400 });
   }
-  const result = db.prepare("UPDATE design_orders SET status = ? WHERE id = ?").run(status, designId);
+  const result = await withDatabaseContext({ userId: user.id, role: "admin" }, () =>
+    db.prepare("UPDATE design_orders SET status = ? WHERE id = ?").run(status, designId),
+  );
   if (result.changes === 0) return NextResponse.json({ error: "Design order not found" }, { status: 404 });
-  logAdminAction(user.id, user.email, "design_order.status", designId, `status=${status}`);
+  await logAdminAction(user.id, user.email, "design_order.status", designId, `status=${status}`);
   return NextResponse.json({ success: true });
 }

@@ -1,7 +1,7 @@
 import { testimonials } from "@/lib/data";
 export default function Testimonials() {
   return (
-    <section className="bg-black py-24">
+    <section className="scroll-reveal bg-black py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <h2 className="text-3xl font-bold text-white">What Our Customers Say</h2>

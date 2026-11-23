@@ -12,7 +12,7 @@ export default function Newsletter() {
     } catch { setStatus("error"); }
   }
   return (
-    <section className="bg-[#111] py-24">
+    <section className="scroll-reveal bg-[#111] py-24">
       <div className="mx-auto max-w-2xl px-4 text-center sm:px-6">
         <h2 className="text-3xl font-bold text-white">Stay in the Loop</h2>
         <p className="mt-2 text-[#a0a0a0]">Be the first to know about drops, restocks, and exclusive offers.</p>

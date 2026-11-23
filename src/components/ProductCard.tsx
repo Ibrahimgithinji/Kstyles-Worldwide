@@ -12,10 +12,10 @@ const categoryLabels: Record<string, string> = {
 
 export default function ProductCard({ product }: { product: ProductWithVariants }) {
   return (
-    <Link href={"/shop/" + product.id} className="group">
+    <Link href={"/shop/" + product.id} className="group block transition-transform duration-300 hover:-translate-y-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#d4af37] motion-reduce:transform-none motion-reduce:transition-none">
       <div className="aspect-[3/4] overflow-hidden border border-[#2a2a2a] bg-[#111] group-hover:border-[#d4af37] transition-colors">
         {product.image ? (
-          <Image src={product.image} alt={product.name} width={600} height={800} className="h-full w-full object-contain p-2 transition-transform duration-500 group-hover:scale-105" />
+          <Image src={product.image} alt={product.name} width={600} height={800} className="h-full w-full object-contain p-2 transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none" />
         ) : (
           <div className="flex h-full items-center justify-center"><span className="text-6xl font-bold text-[#2a2a2a]">{product.name[0]}</span></div>
         )}

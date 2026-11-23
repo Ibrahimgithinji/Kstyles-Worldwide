@@ -11,7 +11,7 @@ export default function HeroMedia({ hasVideo }: { hasVideo: boolean }) {
           playsInline
           preload="metadata"
           aria-hidden="true"
-          className="h-full w-full object-cover object-[50%_0%]"
+          className="hero-media h-full w-full object-cover object-[50%_0%]"
         >
           <source src="/videos/brand.mp4" type="video/mp4" />
         </video>
@@ -23,7 +23,7 @@ export default function HeroMedia({ hasVideo }: { hasVideo: boolean }) {
           height={1600}
           preload
           aria-hidden="true"
-          className="h-full w-full object-cover object-[50%_0%]"
+          className="hero-media h-full w-full object-cover object-[50%_0%]"
         />
       )}
     </div>

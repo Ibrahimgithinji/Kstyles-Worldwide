@@ -6,7 +6,7 @@ export default async function FeaturedProducts() {
   const rows = await db.prepare("SELECT * FROM products WHERE featured = 1 ORDER BY createdAt DESC").all<ProductRecord>();
   const featured = rows.map(presentProduct);
   return (
-    <section className="py-24">
+    <section className="scroll-reveal py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-end justify-between">
           <div>

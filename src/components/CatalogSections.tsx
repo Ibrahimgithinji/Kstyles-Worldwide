@@ -25,7 +25,7 @@ export default async function CatalogSections() {
   return (
     <div className="border-t border-[#2a2a2a]">
       {sections.map(section => (
-        <section key={section.id} className="border-b border-[#2a2a2a] py-20">
+        <section key={section.id} className="scroll-reveal border-b border-[#2a2a2a] py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex items-end justify-between">
               <h2 className="text-3xl font-bold text-white">{section.label}</h2>

@@ -10,7 +10,6 @@ const links = [
   { href: "/", label: "Home" },
   { href: "/shop", label: "Shop" },
   { href: "/designs", label: "Designs" },
-  { href: "/blog", label: "Blog" },
 ];
 
 const menuLinks = [

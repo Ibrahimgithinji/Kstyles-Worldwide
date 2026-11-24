@@ -136,8 +136,6 @@ const upsert = (table, cols, row) => {
   db.prepare(sql).run(...cols.map((c) => row[c]));
 };
 
-const ID = (n) => String(n);
-
 function getSeedAdminPassword() {
   const password = process.env.SEED_ADMIN_PASSWORD;
   if (typeof password !== "string" || password.length < 12) {
@@ -213,14 +211,6 @@ db.transaction(() => {
   }
 })();
 
-// Blog posts
-const blogPosts = [
-  { id: ID(1), title: "The Art of Layering: Winter Style Guide", slug: "art-of-layering-winter-style-guide", excerpt: "Master the art of layering with Kstyles' top picks for the cold season.", content: "Layering is not just about staying warm—it's about making a statement. Start with a lightweight base like our Graphic Tee, add a mid-layer such as the Signature Hoodie, and top it off with the Oversized Denim Jacket or Leather Bomber. The key is mixing textures and proportions while keeping a cohesive color palette.", image: "https://images.unsplash.com/photo-1520975954732-35dd22299614?auto=format&fit=crop&w=900&q=80", author: "Kstyles Team", date: "2025-12-20", tags: "style-guide,winter,layering" },
-  { id: ID(2), title: "Behind the Design: Gold Label Collection", slug: "behind-the-design-gold-label-collection", excerpt: "An exclusive look at the inspiration and craftsmanship behind our Gold Label line.", content: "The Gold Label collection represents the pinnacle of Kstyles craftsmanship. Each piece undergoes a meticulous design process, from sketching to prototyping. We source premium materials from around the world—Italian leather, Japanese denim, and Egyptian cotton—to ensure unparalleled quality.", image: "https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?auto=format&fit=crop&w=900&q=80", author: "Kstyles Team", date: "2025-11-30", tags: "behind-the-scenes,gold-label,craftsmanship" },
-  { id: ID(3), title: "How to Style Cargo Pants for Any Occasion", slug: "how-to-style-cargo-pants", excerpt: "From casual to dressed-up, here's how to make cargo pants work for you.", content: "Cargo pants have made a major comeback. For a casual look, pair our Cargo Pants with the Signature Hoodie and clean sneakers. To dress them up, swap the hoodie for a fitted turtleneck and add the Leather Bomber Jacket. The versatility of cargo pants makes them a must-have in any wardrobe.", image: "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=900&q=80", author: "Kstyles Team", date: "2025-11-15", tags: "style-guide,cargo-pants,styling" },
-];
-for (const p of blogPosts) upsert("blog_posts", Object.keys(p), p);
-
 // Sample made-to-order designs — only seeded when the designs table is empty,
 // so designs created or hidden by the admin are never overwritten.
 const designCount = db.prepare("SELECT COUNT(*) c FROM designs").get().c;
@@ -295,6 +285,5 @@ if (designCount === 0) {
 console.log("Seed complete!");
 console.log("  users:", db.prepare("SELECT COUNT(*) c FROM users").get().c);
 console.log("  products:", db.prepare("SELECT COUNT(*) c FROM products").get().c);
-  console.log("  blog_posts:", db.prepare("SELECT COUNT(*) c FROM blog_posts").get().c);
 console.log("  designs:", db.prepare("SELECT COUNT(*) c FROM designs").get().c);
 console.log("Admin login email:", adminEmail);

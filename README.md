@@ -50,7 +50,7 @@ fixed hash allowlist required by Next.js Image's transparent placeholder style.
 
 For local development, the app auto-creates its SQLite tables on first run, but
 they must be seeded to have data.
-The seed creates the initial admin account, products, collections, and blog posts:
+The seed creates the initial admin account, catalogue products, and sample made-to-order designs:
 
 ```bash
 npm run seed
@@ -161,11 +161,11 @@ written to production logs. See `.env.example` for the required variables.
 - Storefront: landing with hero + featured products, shop with categories, product detail (sizes/colors), cart (localStorage), checkout with real orders
 - Auth: register / login / session via JWT
 - Admin: dashboard with live stats, product add/delete, order management with status updates
-- Content: collections, blog, testimonials, newsletter, contact form (all persisted to DB)
+- Content: collections, testimonials, newsletter, contact form (all persisted to DB)
 
 ## API Routes
 
-`/api/auth/login`, `/api/auth/register`, `/api/auth/me`, `/api/products`, `/api/products/[id]`, `/api/orders`, `/api/admin/products`, `/api/admin/products/[id]`, `/api/admin/orders`, `/api/collections`, `/api/blog`, `/api/blog/[slug]`, `/api/contact`, `/api/newsletter`
+`/api/auth/login`, `/api/auth/register`, `/api/auth/me`, `/api/products`, `/api/products/[id]`, `/api/orders`, `/api/admin/products`, `/api/admin/products/[id]`, `/api/admin/orders`, `/api/collections`, `/api/contact`, `/api/newsletter`
 
 All write API requests must include the site's matching `Origin` header, and
 JSON endpoints require `Content-Type: application/json`. Browser requests
